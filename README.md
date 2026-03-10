@@ -927,7 +927,7 @@ SOFTWARE.
 
 <div align="center">
 
-**Built with ❤️ by [Your Name](https://github.com/yourusername)**
+**Built with ❤️ by [Nabin Oli](https://github.com/yourusername)**
 
 If you found this project helpful, please consider giving it a ⭐!
 
