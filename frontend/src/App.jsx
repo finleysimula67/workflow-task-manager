@@ -6,7 +6,6 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import AuthCallback from './pages/AuthCallback';
-// import TasksPage from "./pages/Tasks.jsx";
 import AdminDashboard from './pages/AdminDashboard';
 import UserDetails from './pages/UserDetails';
 import { authApi } from './api/authApi.js';
@@ -18,6 +17,11 @@ import ResetPassword from './pages/ResetPassword';
 import Tasks from './pages/Tasks';
 import Categories from './pages/Categories';
 import Statistics from './pages/Statistics';
+import LandingPage from './pages/public/LandingPage';
+import About from './pages/public/About';
+import Features from './pages/public/Features';
+import Pricing from './pages/public/Pricing';
+import Contact from './pages/public/Contact';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -46,6 +50,13 @@ function App() {
     <>
       <Router>
         <Routes>
+             {/* PUBLIC PAGES - NEW */}
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/features" element={<Features />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/contact" element={<Contact />} />
+
              {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
