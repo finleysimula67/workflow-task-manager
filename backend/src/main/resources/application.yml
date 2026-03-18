@@ -1,6 +1,9 @@
 # ============================================
-# APPLICATION CONFIGURATION
+# PRODUCTION CONFIGURATION
 # ============================================
+# Use with: java -jar -Dspring.profiles.active=prod app.jar
+# ============================================
+
 spring:
   application:
     name: WorkFlow
@@ -9,14 +12,16 @@ spring:
   # DATABASE CONFIGURATION
   # ============================================
   datasource:
-    url: jdbc:postgresql://localhost:5432/taskmanager_db
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:nabin99}
+    url: ${DATABASE_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
+      maximum-pool-size: 20
       minimum-idle: 5
       connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
 
   # ============================================
   # JPA/HIBERNATE CONFIGURATION
@@ -24,16 +29,16 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate  # DO NOT use 'update' in production
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
-        use_sql_comments: true
+        format_sql: false
+        use_sql_comments: false
     open-in-view: false
 
   # ============================================
-  # FILE UPLOAD CONFIGURATION (Multipart)
+  # FILE UPLOAD CONFIGURATION
   # ============================================
   servlet:
     multipart:
@@ -50,8 +55,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 74808369318-qu1b3taqbc3b0bnvtjr01ujkppcla1la.apps.googleusercontent.com
-            client-secret: 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
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
             scope:
               - email
               - profile
@@ -65,13 +70,13 @@ spring:
             user-name-attribute: sub
 
   # ============================================
-  # DEVTOOLS
+  # DEVTOOLS - DISABLED IN PRODUCTION
   # ============================================
   devtools:
     restart:
-      enabled: true
+      enabled: false
     livereload:
-      enabled: true
+      enabled: false
 
   # ============================================
   # EMAIL CONFIGURATION
@@ -79,8 +84,8 @@ spring:
   mail:
     host: smtp.gmail.com
     port: 587
-    username: nabinoli986@gmail.com
-    password: zqdr fjac mszs sayo
+    username: ${EMAIL_USERNAME}
+    password: ${EMAIL_PASSWORD}
     properties:
       mail:
         smtp:
@@ -96,36 +101,41 @@ spring:
 # SERVER CONFIGURATION
 # ============================================
 server:
-  port: 8080
+  port: ${PORT:8080}
   tomcat:
-    max-http-form-post-size: 52428800  # 50MB in bytes
-    max-swallow-size: 52428800         # 50MB in bytes
+    max-http-form-post-size: 52428800  # 50MB
+    max-swallow-size: 52428800
   servlet:
     context-path: /
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 # ============================================
 # APP CONFIGURATION
 # ============================================
 app:
   oauth2:
-    redirect-uri: ${OAUTH2_REDIRECT_URI:http://localhost:5173/auth/callback}
+    redirect-uri: ${OAUTH2_REDIRECT_URI}
   email:
-    from: nabinoli986@gmail.com
+    from: ${EMAIL_FROM}
     from-name: WorkFlow Team
   frontend:
-    url: http://localhost:5173
+    url: ${FRONTEND_URL}
   verification:
-    token-expiration: 86400000  # 24 hours in milliseconds
+    token-expiration: 86400000  # 24 hours
   password-reset:
-    token-expiration: 3600000   # 1 hour in milliseconds
+    token-expiration: 3600000   # 1 hour
 
 # ============================================
 # JWT CONFIGURATION
 # ============================================
 jwt:
-  secret: ${JWT_SECRET:MySecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLongForHS256Algorithm}
-  expiration: 900000
-  refresh-expiration: 604800000
+  secret: ${JWT_SECRET}
+  expiration: 900000            # 15 minutes
+  refresh-expiration: 604800000 # 7 days
   issuer: WorkFlow
 
 # ============================================
@@ -133,21 +143,26 @@ jwt:
 # ============================================
 cors:
   allowed:
-    origins: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:4200
+    origins: ${CORS_ALLOWED_ORIGINS}
 
 # ============================================
 # FILE UPLOAD DIRECTORY
 # ============================================
 file:
-  upload-dir: uploads
+  upload-dir: ${UPLOAD_DIR:uploads}
 
 # ============================================
-# LOGGING CONFIGURATION
+# LOGGING CONFIGURATION - PRODUCTION
 # ============================================
 logging:
   level:
-    com.nabin.taskmanager: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    org.springframework.security: DEBUG
-    org.springframework.web: DEBUG
+    root: INFO
+    com.nabin.workflow: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+  file:
+    name: logs/workflow.log
+    max-size: 10MB
+    max-history: 30
