@@ -5,22 +5,25 @@ import toast from 'react-hot-toast';
 
 function Register() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
+
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    // Clear error when user types
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -32,7 +35,6 @@ function Register() {
   const validate = () => {
     const newErrors = {};
 
-    // Username validation
     if (!formData.username) {
       newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
@@ -40,17 +42,16 @@ function Register() {
     } else if (formData.username.length > 50) {
       newErrors.username = 'Username must not exceed 50 characters';
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, underscores and hyphens';
+      newErrors.username =
+          'Username can only contain letters, numbers, underscores and hyphens';
     }
 
-    // Email validation
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
 
-    // Password validation
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
@@ -62,10 +63,10 @@ function Register() {
     } else if (!/(?=.*[A-Z])/.test(formData.password)) {
       newErrors.password = 'Password must contain at least one uppercase letter';
     } else if (!/(?=.*[@#$%^&+=])/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one special character (@#$%^&+=)';
+      newErrors.password =
+          'Password must contain at least one special character (@#$%^&+=)';
     }
 
-    // Confirm password validation
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
@@ -76,178 +77,215 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
- const handleSubmit = async (e) => {
-   e.preventDefault();
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-   if (!validate()) {
-     return;
-   }
+    if (!validate()) return;
 
-   setLoading(true);
+    setLoading(true);
 
-   try {
-     console.log('Attempting registration:', formData.email);
+    try {
+      const response = await authApi.register(formData);
 
-     const response = await authApi.register(formData);
+      if (response.success) {
+        toast.success(
+            'Registration successful! Please check your email to verify your account.'
+        );
 
-     console.log('Registration response:', response);
+        setFormData({
+          username: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+        });
 
-     if (response.success) {
-       toast.success('Registration successful! Please check your email to verify your account.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 2000);
+      }
+    } catch (error) {
+      const errorMessage =
+          error.response?.data?.message ||
+          'Registration failed. Please try again.';
 
-       // Clear form
-       setFormData({
-         username: '',
-         email: '',
-         password: '',
-         confirmPassword: ''
-       });
+      if (error.response?.data?.fieldErrors) {
+        setErrors(error.response.data.fieldErrors);
+      }
 
-       // Redirect to login with message
-       setTimeout(() => {
-         navigate('/login');
-       }, 2000);
-     }
-   } catch (error) {
-           console.error('Registration error:', error);
-           const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
-
-           // Handle field errors
-           if (error.response?.data?.fieldErrors) {
-             setErrors(error.response.data.fieldErrors);
-           }
-
-           toast.error(errorMessage);
-         }
-     finally {
-           setLoading(false);
-         }
- };
-
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-350 to-slate-450 p-4">
-      <div className="bg-white rounded-lg shadow-2xl p-8 w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-2">Create Account</h1>
-          <p className="text-gray-600">Join WorkFlow today</p>
+      <div className="min-h-screen flex bg-[#020617]">
+
+        {/* LEFT SIDE (same as login) */}
+        <div className="hidden md:flex w-1/2 relative items-center justify-center">
+
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#1e3a8a,transparent_40%),radial-gradient(circle_at_80%_70%,#7c3aed,transparent_40%)]"></div>
+
+          <div className="relative z-10 px-16 text-white">
+
+            <div className="flex items-center gap-3 mb-6">
+              <div className="bg-white/10 p-3 rounded-lg backdrop-blur-md">
+                <svg
+                    className="w-6 h-6 text-blue-400"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                >
+                  <path d="M9 11l3 3L22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </div>
+              <h1 className="text-3xl font-bold">WorkFlow</h1>
+            </div>
+
+            <h2 className="text-4xl font-semibold mb-4 leading-snug">
+              Build better habits. <br /> One task at a time.
+            </h2>
+
+            <p className="text-gray-400 max-w-md">
+              Start organizing your work, tracking your progress, and becoming more productive every day.
+            </p>
+          </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Username Field */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition ${
-                errors.username ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="johndoe"
-            />
-            {errors.username && (
-              <p className="mt-1 text-sm text-red-600">{errors.username}</p>
-            )}
+        {/* RIGHT SIDE */}
+        <div className="w-full md:w-1/2 flex items-center justify-center px-6">
+
+          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
+
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className="text-2xl font-bold text-white mb-2">
+                Create Account
+              </h2>
+              <p className="text-gray-400">Join WorkFlow today</p>
+            </div>
+
+            {/* FORM */}
+            <form onSubmit={handleSubmit} className="space-y-5">
+
+              {/* Username */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Username
+                </label>
+                <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    placeholder="johndoe"
+                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                        errors.username ? 'border-red-500' : 'border-white/10'
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                />
+                {errors.username && (
+                    <p className="mt-1 text-sm text-red-400">
+                      {errors.username}
+                    </p>
+                )}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Email Address
+                </label>
+                <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    placeholder="you@example.com"
+                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                        errors.email ? 'border-red-500' : 'border-white/10'
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                />
+                {errors.email && (
+                    <p className="mt-1 text-sm text-red-400">
+                      {errors.email}
+                    </p>
+                )}
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    placeholder="Create a strong password"
+                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                        errors.password ? 'border-red-500' : 'border-white/10'
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                />
+                {errors.password && (
+                    <p className="mt-1 text-sm text-red-400">
+                      {errors.password}
+                    </p>
+                )}
+              </div>
+
+              {/* Confirm Password */}
+              <div>
+                <label className="block text-sm text-gray-300 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                    type="password"
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    placeholder="Re-enter your password"
+                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                        errors.confirmPassword ? 'border-red-500' : 'border-white/10'
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                />
+                {errors.confirmPassword && (
+                    <p className="mt-1 text-sm text-red-400">
+                      {errors.confirmPassword}
+                    </p>
+                )}
+              </div>
+
+              {/* Submit */}
+              <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                      loading
+                          ? 'bg-gray-600 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/30'
+                  }`}
+              >
+                {loading ? 'Creating Account...' : 'Sign Up'}
+              </button>
+            </form>
+
+            {/* Footer */}
+            <p className="text-center text-gray-500 text-sm mt-6">
+              Already have an account?{' '}
+              <Link
+                  to="/login"
+                  className="text-blue-400 hover:text-blue-300"
+              >
+                Sign In
+              </Link>
+            </p>
+
           </div>
-
-          {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="you@example.com"
-            />
-            {errors.email && (
-              <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-            )}
-          </div>
-
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition ${
-                errors.password ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Create a strong password"
-            />
-            {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-            )}
-          </div>
-
-          {/* Confirm Password Field */}
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition ${
-                errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Re-enter your password"
-            />
-            {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition ${
-              loading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-green-600 hover:bg-green-700 active:scale-95'
-            }`}
-          >
-            {loading ? 'Creating Account...' : 'Sign Up'}
-          </button>
-        </form>
-
-        {/* Login Link */}
-        <div className="mt-6 text-center">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="text-green-600 hover:text-green-700 font-semibold"
-            >
-              Sign In
-            </Link>
-          </p>
         </div>
       </div>
-    </div>
   );
 }
 
