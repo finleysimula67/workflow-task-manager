@@ -11,14 +11,15 @@ function AdminDashboard() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
+  // --- LOGIC & SIDE EFFECTS ---
+
   useEffect(() => {
-    // Check if user is admin
+    // Security check: Redirect if not admin
     if (!authApi.isAdmin()) {
       toast.error('Access denied. Admin only.');
       navigate('/dashboard');
       return;
     }
-
     loadUsers();
   }, [navigate]);
 
@@ -27,6 +28,7 @@ function AdminDashboard() {
       setLoading(true);
       const response = await axios.get('/admin/users');
 
+      // Assuming your API returns { success: true, data: [...] }
       if (response.success) {
         setUsers(response.data);
       }
@@ -43,14 +45,13 @@ function AdminDashboard() {
       const response = await axios.delete(`/admin/users/${userId}`);
 
       if (response.success) {
-        toast.success('User deleted successfully');
-        setUsers(users.filter(u => u.id !== userId));
+        toast.success('User deleted');
+        setUsers(users.filter((u) => u.id !== userId));
         setShowDeleteModal(false);
         setSelectedUser(null);
       }
     } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error(error.response?.data?.message || 'Failed to delete user');
+      toast.error(error.response?.data?.message || 'Delete failed');
     }
   };
 
@@ -61,186 +62,209 @@ function AdminDashboard() {
 
   const handleLogout = async () => {
     await authApi.logout();
-    toast.success('Logged out successfully');
+    toast.success('Logged out');
     navigate('/login');
   };
 
+  // --- RENDER: LOADING STATE ---
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600"></div>
-      </div>
+        <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
+        </div>
     );
   }
 
+  // --- RENDER: MAIN DASHBOARD ---
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-            <p className="text-gray-600">Manage users and system settings</p>
-          </div>
-          <div className="flex gap-4">
-            <button
-              onClick={() => navigate('/dashboard')}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-            >
-              Back to Dashboard
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-            >
-              Logout
-            </button>
-          </div>
-        </div>
-      </header>
+      <div className="min-h-screen bg-[#020617] text-white font-sans">
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500 text-sm">Total Users</p>
-            <p className="text-3xl font-bold text-blue-600">{users.length}</p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500 text-sm">Active Users</p>
-            <p className="text-3xl font-bold text-green-600">
-              {users.filter(u => u.enabled).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500 text-sm">Inactive Users</p>
-            <p className="text-3xl font-bold text-red-600">
-              {users.filter(u => !u.enabled).length}
-            </p>
-          </div>
-          <div className="bg-white rounded-lg shadow p-6">
-            <p className="text-gray-500 text-sm">Admin Users</p>
-            <p className="text-3xl font-bold text-purple-600">
-              {users.filter(u => u.roles?.includes('ROLE_ADMIN')).length}
-            </p>
-          </div>
-        </div>
+        {/* HEADER */}
+        <header className="border-b border-white/10 backdrop-blur-lg bg-black/30 sticky top-0 z-20">
+          <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Admin Dashboard</h1>
+              <p className="text-gray-400 text-sm">Manage users and system settings</p>
+            </div>
 
-        {/* Users Table */}
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">All Users</h2>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Username
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.username}
-                          </div>
-                          {user.roles?.includes('ROLE_ADMIN') && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
-                              Admin
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.email}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.enabled
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {user.enabled ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => navigate(`/admin/users/${user.id}`)}
-                        className="text-blue-600 hover:text-blue-900 mr-4"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => confirmDelete(user)}
-                        className="text-red-600 hover:text-red-900"
-                        disabled={user.roles?.includes('ROLE_ADMIN')}
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </main>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-          <div className="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete user <strong>{selectedUser.username}</strong>?
-              This action cannot be undone.
-            </p>
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3">
               <button
-                onClick={() => {
-                  setShowDeleteModal(false);
-                  setSelectedUser(null);
-                }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                  onClick={() => navigate('/dashboard')}
+                  className="px-4 py-2 rounded-lg bg-black/40 border border-white/10 hover:bg-white/5 transition-all active:scale-95"
               >
-                Cancel
+                Dashboard
               </button>
               <button
-                onClick={() => handleDeleteUser(selectedUser.id)}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  onClick={handleLogout}
+                  className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 transition-all shadow-lg shadow-red-900/20 active:scale-95"
               >
-                Delete
+                Logout
               </button>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        </header>
+
+        <main className="max-w-7xl mx-auto px-6 py-8">
+
+          {/* STATISTICS SECTION */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+            {[
+              {
+                title: 'Total Users',
+                value: users.length,
+                color: 'text-blue-400',
+              },
+              {
+                title: 'Active Users',
+                value: users.filter((u) => u.enabled).length,
+                color: 'text-green-400',
+              },
+              {
+                title: 'Inactive Users',
+                value: users.filter((u) => !u.enabled).length,
+                color: 'text-red-400',
+              },
+              {
+                title: 'Admins',
+                value: users.filter((u) => u.roles?.includes('ROLE_ADMIN')).length,
+                color: 'text-purple-400',
+              },
+            ].map((card, index) => (
+                <div
+                    key={index}
+                    className="bg-black/40 border border-white/10 rounded-xl p-6 backdrop-blur-md hover:border-white/20 transition-colors"
+                >
+                  <p className="text-gray-400 text-sm font-medium">{card.title}</p>
+                  <p className={`text-3xl font-bold mt-1 ${card.color}`}>
+                    {card.value}
+                  </p>
+                </div>
+            ))}
+          </div>
+
+          {/* USERS TABLE SECTION */}
+          <div className="bg-black/40 border border-white/10 rounded-xl backdrop-blur-md overflow-hidden shadow-2xl">
+            <div className="px-6 py-5 border-b border-white/10 flex justify-between items-center">
+              <h2 className="text-lg font-semibold">All Registered Users</h2>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left">
+                <thead className="bg-white/5 text-gray-400">
+                <tr>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Username</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-4 font-semibold uppercase tracking-wider text-right">Actions</th>
+                </tr>
+                </thead>
+
+                <tbody className="divide-y divide-white/10">
+                {users.map((user) => (
+                    <tr key={user.id} className="hover:bg-white/5 transition-colors group">
+                      <td className="px-6 py-4 text-gray-400">{user.id}</td>
+
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                        <span className="font-medium text-white group-hover:text-blue-400 transition-colors">
+                          {user.username}
+                        </span>
+                          {user.roles?.includes('ROLE_ADMIN') && (
+                              <span className="text-[10px] uppercase font-bold text-purple-400 mt-0.5">
+                            Administrator
+                          </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="px-6 py-4 text-gray-300">
+                        {user.email}
+                      </td>
+
+                      <td className="px-6 py-4">
+                      <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${
+                              user.enabled
+                                  ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                  : 'bg-red-500/10 text-red-400 border-red-500/20'
+                          }`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full mr-1.5 ${user.enabled ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                        {user.enabled ? 'Active' : 'Inactive'}
+                      </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-4">
+                          <button
+                              onClick={() => navigate(`/admin/users/${user.id}`)}
+                              className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+                          >
+                            View
+                          </button>
+                          <button
+                              onClick={() => confirmDelete(user)}
+                              className="text-red-400 hover:text-red-300 font-medium transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                              disabled={user.roles?.includes('ROLE_ADMIN')}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                ))}
+                </tbody>
+              </table>
+
+              {users.length === 0 && (
+                  <div className="py-20 text-center text-gray-500">
+                    No users found in the system.
+                  </div>
+              )}
+            </div>
+          </div>
+        </main>
+
+        {/* DELETE CONFIRMATION MODAL */}
+        {showDeleteModal && selectedUser && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              {/* Backdrop */}
+              <div
+                  className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+                  onClick={() => setShowDeleteModal(false)}
+              ></div>
+
+              {/* Modal Card */}
+              <div className="relative bg-[#0f172a] border border-white/10 rounded-2xl p-8 w-full max-w-md shadow-2xl animate-in fade-in zoom-in duration-200">
+                <h3 className="text-xl font-bold text-white mb-2">Delete User?</h3>
+                <p className="text-gray-400 mb-8 leading-relaxed">
+                  Are you sure you want to remove <strong>{selectedUser.username}</strong>? This action is permanent and cannot be undone.
+                </p>
+
+                <div className="flex justify-end gap-3">
+                  <button
+                      onClick={() => {
+                        setShowDeleteModal(false);
+                        setSelectedUser(null);
+                      }}
+                      className="px-5 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl transition-colors font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                      onClick={() => handleDeleteUser(selectedUser.id)}
+                      className="px-5 py-2.5 bg-red-600 hover:bg-red-700 rounded-xl transition-all font-medium shadow-lg shadow-red-900/30 active:scale-95"
+                  >
+                    Delete User
+                  </button>
+                </div>
+              </div>
+            </div>
+        )}
+      </div>
   );
 }
 
