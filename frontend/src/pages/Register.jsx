@@ -16,6 +16,17 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
+  // Google Sign Up Handler (Matches your Login logic)
+  const handleGoogleSignUp = async () => {
+    try {
+      // You can use your existing authApi.googleLogin() or similar redirect here
+      // toast.loading("Redirecting to Google...");
+      window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    } catch (error) {
+      toast.error("Google sign up failed");
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -121,33 +132,22 @@ function Register() {
   return (
       <div className="min-h-screen flex bg-[#020617]">
 
-        {/* LEFT SIDE (same as login) */}
+        {/* LEFT SIDE */}
         <div className="hidden md:flex w-1/2 relative items-center justify-center">
-
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#1e3a8a,transparent_40%),radial-gradient(circle_at_80%_70%,#7c3aed,transparent_40%)]"></div>
-
           <div className="relative z-10 px-16 text-white">
-
             <div className="flex items-center gap-3 mb-6">
               <div className="bg-white/10 p-3 rounded-lg backdrop-blur-md">
-                <svg
-                    className="w-6 h-6 text-blue-400"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                >
+                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                   <path d="M9 11l3 3L22 4" />
                   <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                 </svg>
               </div>
               <h1 className="text-3xl font-bold">WorkFlow</h1>
             </div>
-
             <h2 className="text-4xl font-semibold mb-4 leading-snug">
               Build better habits. <br /> One task at a time.
             </h2>
-
             <p className="text-gray-400 max-w-md">
               Start organizing your work, tracking your progress, and becoming more productive every day.
             </p>
@@ -155,26 +155,41 @@ function Register() {
         </div>
 
         {/* RIGHT SIDE */}
-        <div className="w-full md:w-1/2 flex items-center justify-center px-6">
-
+        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10">
           <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
 
             {/* Header */}
             <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-white mb-2">
-                Create Account
-              </h2>
+              <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
               <p className="text-gray-400">Join WorkFlow today</p>
+            </div>
+
+            {/* GOOGLE SIGN UP BUTTON */}
+            <button
+                type="button"
+                onClick={handleGoogleSignUp}
+                className="w-full py-3 px-4 rounded-lg bg-white text-black font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition-all duration-200 active:scale-95 mb-6 shadow-lg shadow-white/5"
+            >
+              <img
+                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                  alt="Google"
+                  className="w-5 h-5"
+              />
+              Continue with Google
+            </button>
+
+            {/* DIVIDER */}
+            <div className="relative flex items-center mb-6">
+              <div className="flex-grow border-t border-white/10"></div>
+              <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase tracking-widest">or</span>
+              <div className="flex-grow border-t border-white/10"></div>
             </div>
 
             {/* FORM */}
             <form onSubmit={handleSubmit} className="space-y-5">
-
               {/* Username */}
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Username
-                </label>
+                <label className="block text-sm text-gray-300 mb-2">Username</label>
                 <input
                     type="text"
                     name="username"
@@ -185,18 +200,12 @@ function Register() {
                         errors.username ? 'border-red-500' : 'border-white/10'
                     } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
                 />
-                {errors.username && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.username}
-                    </p>
-                )}
+                {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username}</p>}
               </div>
 
               {/* Email */}
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Email Address
-                </label>
+                <label className="block text-sm text-gray-300 mb-2">Email Address</label>
                 <input
                     type="email"
                     name="email"
@@ -207,18 +216,12 @@ function Register() {
                         errors.email ? 'border-red-500' : 'border-white/10'
                     } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
                 />
-                {errors.email && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.email}
-                    </p>
-                )}
+                {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
               </div>
 
               {/* Password */}
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Password
-                </label>
+                <label className="block text-sm text-gray-300 mb-2">Password</label>
                 <input
                     type="password"
                     name="password"
@@ -229,18 +232,12 @@ function Register() {
                         errors.password ? 'border-red-500' : 'border-white/10'
                     } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
                 />
-                {errors.password && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.password}
-                    </p>
-                )}
+                {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
               </div>
 
               {/* Confirm Password */}
               <div>
-                <label className="block text-sm text-gray-300 mb-2">
-                  Confirm Password
-                </label>
+                <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
                 <input
                     type="password"
                     name="confirmPassword"
@@ -251,14 +248,10 @@ function Register() {
                         errors.confirmPassword ? 'border-red-500' : 'border-white/10'
                     } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
                 />
-                {errors.confirmPassword && (
-                    <p className="mt-1 text-sm text-red-400">
-                      {errors.confirmPassword}
-                    </p>
-                )}
+                {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
               </div>
 
-              {/* Submit */}
+              {/* Submit Button */}
               <button
                   type="submit"
                   disabled={loading}
@@ -275,14 +268,10 @@ function Register() {
             {/* Footer */}
             <p className="text-center text-gray-500 text-sm mt-6">
               Already have an account?{' '}
-              <Link
-                  to="/login"
-                  className="text-blue-400 hover:text-blue-300"
-              >
+              <Link to="/login" className="text-blue-400 hover:text-blue-300">
                 Sign In
               </Link>
             </p>
-
           </div>
         </div>
       </div>
