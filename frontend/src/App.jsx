@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react'; // Added useEffect for scrolling
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
-// We are using standard relative paths now to avoid the "os error 2"
+// Page Imports
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
@@ -23,110 +24,99 @@ import Features from './pages/public/Features';
 import Pricing from './pages/public/Pricing';
 import Contact from './pages/public/Contact';
 
+/**
+ * 1. SCROLL TO TOP COMPONENT
+ * This component watches the URL. Whenever the path changes,
+ * it smoothly slides the window back to the top.
+ */
+const ScrollToTop = () => {
+    const { pathname } = useLocation();
 
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
+    useEffect(() => {
+        window.scrollTo({
+            top: 0,
+            left: 0,
+            behavior: 'smooth', // This creates the "sliding" animation
+        });
+    }, [pathname]);
+
+    return null;
 };
+
+// Route Protection Components
+const ProtectedRoute = ({ children }) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        return <Navigate to="/login" replace />;
+    }
+    return children;
+};
+
 function AdminRoute({ children }) {
-  const isAuthenticated = authApi.isAuthenticated();
-  const isAdmin = authApi.isAdmin();
+    const isAuthenticated = authApi.isAuthenticated();
+    const isAdmin = authApi.isAdmin();
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
+    if (!isAuthenticated) {
+        return <Navigate to="/login" />;
+    }
 
-  if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
+    if (!isAdmin) {
+        return <Navigate to="/dashboard" />;
+    }
 
-  return children;
+    return children;
 }
+
+/**
+ * 2. MAIN APP COMPONENT
+ */
 function App() {
-  return (
-    <>
-      <Router>
-        <Routes>
-             {/* PUBLIC PAGES - NEW */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/features" element={<Features />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/pricing" element={<Pricing />} />
-              <Route path="/contact" element={<Contact />} />
+    return (
+        <>
+            <Router>
+                {/* We place ScrollToTop inside the Router so it can track the URL */}
+                <ScrollToTop />
 
-             {/* Public Routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
+                <Routes>
+                    {/* PUBLIC PAGES */}
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/features" element={<Features />} />
+                    <Route path="/about" element={<About />} />
+                    <Route path="/pricing" element={<Pricing />} />
+                    <Route path="/contact" element={<Contact />} />
 
-          {/* Email Verification Routes */}
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/resend-verification" element={<ResendVerification />} />
+                    {/* Authentication Routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Password Reset Routes */}
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+                    {/* Email Verification Routes */}
+                    <Route path="/verify-email" element={<VerifyEmail />} />
+                    <Route path="/resend-verification" element={<ResendVerification />} />
 
-          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-{/*           <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} /> */}
+                    {/* Password Reset Routes */}
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
-          <Route
-               path="/tasks"
-                     element={
-                       <ProtectedRoute>
-                         <Tasks />
-                       </ProtectedRoute>
-                     }/>
+                    {/* Protected User Routes */}
+                    <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>}/>
+                    <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>}/>
+                    <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+                    <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
 
-          <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>}/>
+                    {/* Admin Routes */}
+                    <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                    <Route path="/admin/users/:userId" element={<AdminRoute><UserDetails /></AdminRoute>} />
 
-          <Route
-            path="/categories"
-            element={
-              <ProtectedRoute>
-                <Categories />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/statistics"
-            element={
-              <ProtectedRoute>
-                <Statistics />
-              </ProtectedRoute>
-            }
-          />
+                    {/* Fallback */}
+                    <Route path="*" element={<Navigate to="/" />} />
+                </Routes>
+            </Router>
 
-  {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-
-        <Route
-          path="/admin/users/:userId"
-          element={
-            <AdminRoute>
-              <UserDetails />
-            </AdminRoute>
-          }
-        />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-
-        </Routes>
-
-      </Router>
-
-      <Toaster position="top-right" />
-    </>
-  );
+            <Toaster position="top-right" />
+        </>
+    );
 }
 
 export default App;
