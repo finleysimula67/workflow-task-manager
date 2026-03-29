@@ -1,36 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>4.0.2</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath/>
 	</parent>
+
 	<groupId>com.nabin</groupId>
 	<artifactId>workflow</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>WorkFlow</name>
 	<description>WorkFlow - Task Management Application - @Nabin Oli</description>
 	<url/>
-	<licenses>
-		<license/>
-	</licenses>
-	<developers>
-		<developer/>
-	</developers>
+	<licenses><license/></licenses>
+	<developers><developer/></developers>
 	<scm>
-		<connection/>
-		<developerConnection/>
-		<tag/>
-		<url/>
+		<connection/><developerConnection/><tag/><url/>
 	</scm>
+
 	<properties>
 		<java.version>21</java.version>
-		<jjwt.version>0.12.5</jjwt.version>
+		<mapstruct.version>1.5.5.Final</mapstruct.version>
+		<lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+		<jjwt.version>0.12.6</jjwt.version>
+
+		<!--
+		=============================================================
+		  Version overrides using Spring Boot BOM property names.
+		  Spring Boot BOM uses these property names internally, so
+		  defining them here takes precedence over the parent BOM.
+		=============================================================
+
+		  spring-security-web 7.0.2 -> 7.0.4
+		    Addresses: CVE-2026-22732 (CVSS 9.1)
+		    Confirmed on Maven Central: spring-security-bom:7.0.4
+		-->
+		<spring-security.version>7.0.4</spring-security.version>
+
+		<!--
+		  spring-web/spring-webmvc 7.0.3 -> 7.0.6
+		    Addresses: CVE-2026-22735 (CVSS 2.6), CVE-2026-22737 (CVSS 5.9)
+		    Confirmed on Maven Central via spring-security 7.0.4 release notes
+		-->
+		<spring-framework.version>7.0.6</spring-framework.version>
+
+		<!--
+		  tomcat-embed-core 11.0.15 -> 11.0.20
+		    Addresses: CVE-2026-24734 (CVSS 7.5)
+		    Confirmed on Maven Central: tomcat-embed-core:11.0.20
+		-->
+		<tomcat.version>11.0.20</tomcat.version>
+
+		<!--
+		  assertj-core 3.27.6 -> 3.27.7
+		    CONFIRMED PATCH: CVE-2026-24400 (CVSS 7.3) XXE vulnerability
+		    in isXmlEqualTo assertion. Release notes explicitly state this fix.
+		    Test-scope only (not in production runtime).
+		    Confirmed on Maven Central: assertj-core:3.27.7
+		-->
+		<assertj.version>3.27.7</assertj.version>
 	</properties>
+
+	<!--
+	=============================================================
+	  BOM imports for Jackson (both 2.x and 3.x namespaces).
+	  Project-level dependencyManagement takes precedence over
+	  the parent Spring Boot BOM, so these versions win.
+	=============================================================
+	-->
+	<dependencyManagement>
+		<dependencies>
+			<!--
+			  tools.jackson.core:jackson-core 3.0.4 -> 3.1.0
+			    Addresses: GHSA-72hv-8253-57qq (CVSS 7.5)
+			    Spring Boot 4.x uses Jackson 3.x (tools.jackson namespace).
+			    Confirmed on Maven Central: tools.jackson:jackson-bom:3.1.0
+			-->
+			<dependency>
+				<groupId>tools.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>3.1.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+
+			<!--
+			  com.fasterxml.jackson.core:jackson-core 2.20.2 -> 2.21.2
+			    Addresses: GHSA-72hv-8253-57qq (CVSS 7.5), WS-2026-0003 (CVSS 7.5)
+			    For any transitive deps still on the com.fasterxml 2.x namespace.
+			    Confirmed on Maven Central: com.fasterxml.jackson:jackson-bom:2.21.2
+			-->
+			<dependency>
+				<groupId>com.fasterxml.jackson</groupId>
+				<artifactId>jackson-bom</artifactId>
+				<version>2.21.2</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<dependencies>
+
+		<!-- ===== Core Spring Boot Starters ===== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -41,7 +116,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+			<artifactId>spring-boot-starter-oauth2-client</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -49,60 +124,31 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc</artifactId>
+			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- ===== Email and Templating ===== -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-devtools</artifactId>
-			<scope>runtime</scope>
-			<optional>true</optional>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+		</dependency>
+
+		<!-- ===== Database ===== -->
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security-oauth2-client-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-webmvc-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-core</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.mapstruct</groupId>
-			<artifactId>mapstruct</artifactId>
-			<version>1.5.5.Final</version>
-		</dependency>
-		<!-- JWT API -->
+
+		<!-- ===== JWT (0.12.5 is the latest GA on Maven Central) ===== -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -120,21 +166,46 @@
 			<version>${jjwt.version}</version>
 			<scope>runtime</scope>
 		</dependency>
-		<!-- Email -->
+
+		<!-- ===== MapStruct ===== -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${mapstruct.version}</version>
 		</dependency>
 
-		<!-- Thymeleaf (for email templates - optional) -->
+		<!-- ===== Lombok ===== -->
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-thymeleaf</artifactId>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<optional>true</optional>
 		</dependency>
+
+		<!-- ===== Env / Config ===== -->
 		<dependency>
 			<groupId>me.paulschwarz</groupId>
 			<artifactId>spring-dotenv</artifactId>
 			<version>4.0.0</version>
+		</dependency>
+
+		<!-- ===== Dev Tools ===== -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<scope>runtime</scope>
+			<optional>true</optional>
+		</dependency>
+
+		<!-- ===== Test Dependencies ===== -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>
@@ -145,14 +216,32 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
+					<!--
+					    Lombok runs BEFORE MapStruct via lombok-mapstruct-binding
+					    so MapStruct sees all Lombok-generated getters/setters.
+					-->
 					<annotationProcessorPaths>
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
 						</path>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok-mapstruct-binding</artifactId>
+							<version>${lombok-mapstruct-binding.version}</version>
+						</path>
+						<path>
+							<groupId>org.mapstruct</groupId>
+							<artifactId>mapstruct-processor</artifactId>
+							<version>${mapstruct.version}</version>
+						</path>
 					</annotationProcessorPaths>
+					<compilerArgs>
+						<arg>-Amapstruct.defaultComponentModel=spring</arg>
+					</compilerArgs>
 				</configuration>
 			</plugin>
+
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
