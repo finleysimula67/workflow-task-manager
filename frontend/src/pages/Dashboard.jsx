@@ -105,12 +105,10 @@ function Dashboard() {
         <header className="bg-white dark:bg-black/30 dark:backdrop-blur-lg dark:border-b dark:border-white/10 shadow transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
             <div>
-              <img
-                  src={Logo}
-                  alt="WorkFlow Logo"
-                  className="h-20 w-auto object-contain -my-4 -ml-1 dark:invert dark:brightness-200 transition-all duration-300"
-                  style={{ position: 'relative', top: '2px', left: '-22px' }}
-              />
+              <div className="flex items-center text-3xl font-semibold tracking-tight select-none">
+                <span className="text-sky-400">Work</span>
+                <span className="text-slate-900 dark:text-white">Flow</span>
+              </div>
               <p className="text-gray-600 dark:text-gray-300">Welcome back, {user?.username}!</p>
             </div>
 
