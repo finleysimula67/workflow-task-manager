@@ -5,137 +5,108 @@ function PublicNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <div className="flex items-center">
-            <Link to="/" className="flex items-center">
-              <span className="text-2xl font-bold">
-                <span className="text-blue-500">Work</span>
-                <span className="text-gray-900">Flow</span>
+      <nav className="bg-[#030712]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-20">
+
+            {/* Logo - Sky Blue & White by default */}
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center group">
+              <span className="text-2xl font-bold tracking-tight">
+                {/* Default: Sky Blue (#89CFF0) | Hover: White */}
+                <span className="text-[#89CFF0] group-hover:text-white transition duration-300">
+                  Work
+                </span>
+                {/* Default: White (#FFFFFF) | Hover: Sky Blue (#89CFF0) */}
+                <span className="text-white group-hover:text-[#89CFF0] transition duration-300">
+                  Flow
+                </span>
               </span>
-            </Link>
-          </div>
+              </Link>
+            </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
-            <Link 
-              to="/features" 
-              className="text-gray-700 hover:text-blue-600 transition font-medium"
-            >
-              Features
-            </Link>
-            <Link 
-              to="/about" 
-              className="text-gray-700 hover:text-blue-600 transition font-medium"
-            >
-              About
-            </Link>
-            <Link 
-              to="/pricing" 
-              className="text-gray-700 hover:text-blue-600 transition font-medium"
-            >
-              Pricing
-            </Link>
-            <Link 
-              to="/contact" 
-              className="text-gray-700 hover:text-blue-600 transition font-medium"
-            >
-              Contact
-            </Link>
-          </div>
-
-          {/* Auth Buttons - Desktop */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link 
-              to="/login" 
-              className="text-gray-700 hover:text-blue-600 transition font-medium"
-            >
-              Login
-            </Link>
-            <Link 
-              to="/register" 
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition shadow-sm font-medium"
-            >
-              Get Started
-            </Link>
-          </div>
-
-          {/* Mobile menu button */}
-          <button 
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <svg 
-              className="h-6 w-6 text-gray-700" 
-              fill="none" 
-              viewBox="0 0 24 24" 
-              stroke="currentColor"
-            >
-              {isMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
-
-        {/* Mobile menu */}
-        {isMenuOpen && (
-          <div className="md:hidden py-4 border-t">
-            <div className="flex flex-col space-y-3">
-              <Link 
-                to="/features" 
-                className="text-gray-700 hover:text-blue-600 py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              <Link
+                  to="/features"
+                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
               >
                 Features
               </Link>
-              <Link 
-                to="/about" 
-                className="text-gray-700 hover:text-blue-600 py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+              <Link
+                  to="/about"
+                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
               >
                 About
               </Link>
-              <Link 
-                to="/pricing" 
-                className="text-gray-700 hover:text-blue-600 py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+              <Link
+                  to="/pricing"
+                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
               >
                 Pricing
               </Link>
-              <Link 
-                to="/contact" 
-                className="text-gray-700 hover:text-blue-600 py-2 font-medium"
-                onClick={() => setIsMenuOpen(false)}
+              <Link
+                  to="/contact"
+                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
               >
                 Contact
               </Link>
-              <div className="border-t pt-3 mt-3">
-                <Link 
-                  to="/login" 
-                  className="block text-gray-700 hover:text-blue-600 py-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Login
-                </Link>
-                <Link 
-                  to="/register" 
-                  className="block px-6 py-2.5 bg-blue-600 text-white rounded-lg text-center hover:bg-blue-700 mt-2 font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Get Started
-                </Link>
-              </div>
             </div>
+
+            {/* Auth Buttons - Desktop */}
+            <div className="hidden md:flex items-center space-x-6">
+              <Link
+                  to="/login"
+                  className="text-slate-300 hover:text-white transition font-medium text-sm"
+              >
+                Login
+              </Link>
+              <Link
+                  to="/register"
+                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:opacity-90 transition shadow-[0_0_20px_rgba(79,70,229,0.3)] font-semibold text-sm"
+              >
+                Get Started
+              </Link>
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+                className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                aria-label="Toggle menu"
+            >
+              <svg
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+              >
+                {isMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
-        )}
-      </div>
-    </nav>
+
+          {/* Mobile menu */}
+          {isMenuOpen && (
+              <div className="md:hidden py-6 border-t border-slate-800 animate-in fade-in slide-in-from-top-4 duration-200">
+                <div className="flex flex-col space-y-4">
+                  <Link to="/features" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Features</Link>
+                  <Link to="/about" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>About</Link>
+                  <Link to="/pricing" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
+                  <Link to="/contact" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+                  <div className="border-t border-slate-800 pt-6 mt-2 space-y-4">
+                    <Link to="/login" className="block text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Login</Link>
+                    <Link to="/register" className="block px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-center font-bold shadow-lg" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                  </div>
+                </div>
+              </div>
+          )}
+        </div>
+      </nav>
   );
 }
 
