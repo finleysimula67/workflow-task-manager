@@ -1,4 +1,4 @@
-import { useEffect } from 'react'; // Added useEffect for scrolling
+import { useEffect } from 'react'; // Added useEffect for scrolling and history guard
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 
@@ -43,6 +43,28 @@ const ScrollToTop = () => {
     return null;
 };
 
+/**
+ * 2. HISTORY & WHITE SCREEN GUARD
+ * This listener handles the 'Back' button behavior globally.
+ * If the browser serves a cached "blank" page, this forces a reload.
+ */
+const HistoryGuard = () => {
+    useEffect(() => {
+        const handlePageShow = (event) => {
+            // event.persisted is true when the page is loaded from the BFCache
+            // (Back-Forward Cache), which often results in a white screen.
+            if (event.persisted) {
+                window.location.reload();
+            }
+        };
+
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
+    }, []);
+
+    return null;
+};
+
 // Route Protection Components
 const ProtectedRoute = ({ children }) => {
     const token = localStorage.getItem('token');
@@ -68,14 +90,15 @@ function AdminRoute({ children }) {
 }
 
 /**
- * 2. MAIN APP COMPONENT
+ * 3. MAIN APP COMPONENT
  */
 function App() {
     return (
         <>
             <Router>
-                {/* We place ScrollToTop inside the Router so it can track the URL */}
+                {/* Global handlers inside the Router */}
                 <ScrollToTop />
+                <HistoryGuard />
 
                 <Routes>
                     {/* PUBLIC PAGES */}
