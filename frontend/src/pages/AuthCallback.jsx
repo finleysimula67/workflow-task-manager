@@ -10,7 +10,7 @@ function AuthCallback() {
     const handleOAuthCallback = async () => {
       try {
         const token = searchParams.get('token');
-        const refreshToken = searchParams.get('refreshToken');  // Get refresh token
+        const refreshToken = searchParams.get('refreshToken');
 
         if (!token || !refreshToken) {
           toast.error('Authentication failed - missing tokens');
@@ -20,31 +20,28 @@ function AuthCallback() {
 
         console.log('OAuth tokens received');
 
-        // 1. Save access token
+        // Save tokens
         localStorage.setItem('token', token);
-
-        // 2. Save refresh token
         localStorage.setItem('refreshToken', refreshToken);
 
-        // 3. Decode JWT payload to get user info
+        // Decode JWT
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
         const payload = JSON.parse(window.atob(base64));
 
-      const user = {
-        id: payload.userId,
-        username: payload.username,
-        email: payload.sub,
-        roles: payload.roles ? payload.roles.split(',') : ['ROLE_USER']
-      };
+        const user = {
+          id: payload.userId,
+          username: payload.username,
+          email: payload.sub,
+          roles: payload.roles ? payload.roles.split(',') : ['ROLE_USER']
+        };
 
         localStorage.setItem('user', JSON.stringify(user));
 
         console.log('User info saved:', user);
-
         toast.success('Successfully logged in with Google!');
 
-        // 4. Redirect to dashboard
+        // Move to dashboard and clear this page from history
         navigate('/dashboard', { replace: true });
 
       } catch (error) {
@@ -58,12 +55,12 @@ function AuthCallback() {
   }, [searchParams, navigate]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
-        <p className="mt-4 text-gray-600">Completing Google Sign-In...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-400">Completing Google Sign-In...</p>
+        </div>
       </div>
-    </div>
   );
 }
 
