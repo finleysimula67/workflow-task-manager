@@ -1,23 +1,29 @@
-import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 
 function PublicNavbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+
+  // Reset menu state and ensure component "wakes up" on route change
+  // This helps prevent the navbar from getting stuck in a hidden or
+  // background state during back-button navigation.
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
   return (
       <nav className="bg-[#030712]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-20">
 
-            {/* Logo - Sky Blue & White by default */}
+            {/* Logo */}
             <div className="flex items-center">
               <Link to="/" className="flex items-center group">
               <span className="text-2xl font-bold tracking-tight">
-                {/* Default: Sky Blue (#89CFF0) | Hover: White */}
                 <span className="text-[#89CFF0] group-hover:text-white transition duration-300">
                   Work
                 </span>
-                {/* Default: White (#FFFFFF) | Hover: Sky Blue (#89CFF0) */}
                 <span className="text-white group-hover:text-[#89CFF0] transition duration-300">
                   Flow
                 </span>
@@ -94,13 +100,13 @@ function PublicNavbar() {
           {isMenuOpen && (
               <div className="md:hidden py-6 border-t border-slate-800 animate-in fade-in slide-in-from-top-4 duration-200">
                 <div className="flex flex-col space-y-4">
-                  <Link to="/features" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Features</Link>
-                  <Link to="/about" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>About</Link>
-                  <Link to="/pricing" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Pricing</Link>
-                  <Link to="/contact" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Contact</Link>
+                  <Link to="/features" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Features</Link>
+                  <Link to="/about" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">About</Link>
+                  <Link to="/pricing" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Pricing</Link>
+                  <Link to="/contact" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Contact</Link>
                   <div className="border-t border-slate-800 pt-6 mt-2 space-y-4">
-                    <Link to="/login" className="block text-slate-300 hover:text-white px-2 py-1 font-medium text-lg" onClick={() => setIsMenuOpen(false)}>Login</Link>
-                    <Link to="/register" className="block px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-center font-bold shadow-lg" onClick={() => setIsMenuOpen(false)}>Get Started</Link>
+                    <Link to="/login" className="block text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Login</Link>
+                    <Link to="/register" className="block px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-center font-bold shadow-lg">Get Started</Link>
                   </div>
                 </div>
               </div>
