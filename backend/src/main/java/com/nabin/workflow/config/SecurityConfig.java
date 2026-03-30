@@ -4,6 +4,7 @@ import com.nabin.workflow.security.jwt.JwtAuthenticationFilter;
 import com.nabin.workflow.security.oauth2.OAuth2AuthenticationFailureHandler;
 import com.nabin.workflow.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.nabin.workflow.security.oauth2.OAuth2UserService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,7 +37,7 @@ public class SecurityConfig {
     private final OAuth2AuthenticationFailureHandler oAuth2FailureHandler;
 
     /**
-     *  Password encoder - BCrypt
+     * Password encoder - BCrypt
      * Used to hash passwords during registration
      * Used to verify passwords during login
      */
@@ -46,7 +47,7 @@ public class SecurityConfig {
     }
 
     /**
-     *  Authentication Provider
+     * Authentication Provider
      * Connects UserDetailsService + PasswordEncoder
      * Tells Spring Security HOW to authenticate users
      */
@@ -58,7 +59,7 @@ public class SecurityConfig {
     }
 
     /**
-     *  Authentication Manager
+     * Authentication Manager
      * Required for programmatic authentication (login endpoint)
      * Used by AuthenticationService.authenticateUser()
      */
@@ -74,6 +75,13 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                // 1. THIS BLOCK PREVENTS THE WHITE SCREEN
+                // Instead of showing a white page, it sends a clean 401 Unauthorized status
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint((request, response, authException) ->
+                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized")
+                        )
                 )
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
@@ -91,6 +99,8 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
+                        // 2. WE REMOVED .loginPage() here to stop the "Unsafe attempt" Chrome error
+                        // Spring now handles the back button by using the exception handler above
                         .userInfoEndpoint(userInfo -> userInfo
                                 .userService(oAuth2UserService)  // Custom user service
                         )
