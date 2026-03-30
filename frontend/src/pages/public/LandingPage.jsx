@@ -1,8 +1,29 @@
+import { useEffect } from 'react'; // Added useEffect
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../../components/PublicNavbar';
 import PublicFooter from '../../components/PublicFooter';
 
 function LandingPage() {
+  /**
+   * FIX FOR THE WHITE SCREEN:
+   * This effect detects if the user navigated "Back" to this page.
+   * If the browser tries to serve a "frozen" cached version (BFCache),
+   * we force a reload to ensure the UI paints correctly.
+   */
+  useEffect(() => {
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+
+    return () => {
+      window.removeEventListener('pageshow', handlePageShow);
+    };
+  }, []);
+
   return (
       <div className="min-h-screen bg-[#030712] text-slate-200 selection:bg-purple-500/30">
         {/* Navigation */}
