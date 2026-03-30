@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
@@ -16,15 +16,28 @@ function Register() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  // Google Sign Up Handler (Matches your Login logic)
-  const handleGoogleSignUp = async () => {
-    try {
-      // You can use your existing authApi.googleLogin() or similar redirect here
-      // toast.loading("Redirecting to Google...");
-      window.location.href = 'http://localhost:8080/oauth2/authorization/google';
-    } catch (error) {
-      toast.error("Google sign up failed");
-    }
+  /**
+   * FIX: Stop the "Back" button from breaking the page.
+   * We force a reload if the browser tries to load this from cache.
+   */
+  useEffect(() => {
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
+  /**
+   * HANDLER: Google Sign Up
+   * Using location. replace prevents the Google transition from
+   * creating a broken history entry that causes white screens.
+   */
+  const handleGoogleSignUp = () => {
+    const googleAuthUrl = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.assign(googleAuthUrl);
   };
 
   const handleChange = (e) => {
@@ -121,6 +134,8 @@ function Register() {
 
       if (error.response?.data?.fieldErrors) {
         setErrors(error.response.data.fieldErrors);
+      } else if (error.response?.data?.errors) {
+        setErrors(error.response.data.errors);
       }
 
       toast.error(errorMessage);
@@ -132,7 +147,6 @@ function Register() {
   return (
       <div className="min-h-screen flex bg-[#020617]">
 
-        {/* LEFT SIDE */}
         <div className="hidden md:flex w-1/2 relative items-center justify-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#1e3a8a,transparent_40%),radial-gradient(circle_at_80%_70%,#7c3aed,transparent_40%)]"></div>
           <div className="relative z-10 px-16 text-white">
@@ -154,17 +168,14 @@ function Register() {
           </div>
         </div>
 
-        {/* RIGHT SIDE */}
         <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10">
           <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
 
-            {/* Header */}
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
               <p className="text-gray-400">Join WorkFlow today</p>
             </div>
 
-            {/* GOOGLE SIGN UP BUTTON */}
             <button
                 type="button"
                 onClick={handleGoogleSignUp}
@@ -178,16 +189,13 @@ function Register() {
               Continue with Google
             </button>
 
-            {/* DIVIDER */}
             <div className="relative flex items-center mb-6">
               <div className="flex-grow border-t border-white/10"></div>
               <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase tracking-widest">or</span>
               <div className="flex-grow border-t border-white/10"></div>
             </div>
 
-            {/* FORM */}
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* Username */}
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Username</label>
                 <input
@@ -203,7 +211,6 @@ function Register() {
                 {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username}</p>}
               </div>
 
-              {/* Email */}
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Email Address</label>
                 <input
@@ -219,7 +226,6 @@ function Register() {
                 {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
               </div>
 
-              {/* Password */}
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Password</label>
                 <input
@@ -235,7 +241,6 @@ function Register() {
                 {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
               </div>
 
-              {/* Confirm Password */}
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
                 <input
@@ -251,7 +256,6 @@ function Register() {
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
               </div>
 
-              {/* Submit Button */}
               <button
                   type="submit"
                   disabled={loading}
@@ -265,7 +269,6 @@ function Register() {
               </button>
             </form>
 
-            {/* Footer */}
             <p className="text-center text-gray-500 text-sm mt-6">
               Already have an account?{' '}
               <Link to="/login" className="text-blue-400 hover:text-blue-300">
