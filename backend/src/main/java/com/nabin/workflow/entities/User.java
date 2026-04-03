@@ -30,7 +30,6 @@ public class User {
     @Column(nullable = false , unique = true , length = 100)
     private String email;
 
-//  password is nullable for oauth users
     @Column(length = 200)
     private String password;
 
@@ -70,5 +69,8 @@ public class User {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @Column(name = "profile_image", length = 500)
+    private String profileImage;
 
 }
