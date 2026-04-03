@@ -1,81 +1,59 @@
 import axios from 'axios';
 import { authApi } from './authApi';
+import type { ApiResponse } from '../types';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:8080/api',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Flag to prevent multiple refresh attempts
 let isRefreshing = false;
-let failedQueue = [];
+let failedQueue: Array<{ resolve: (token: string) => void; reject: (err: unknown) => void }> = [];
 
-const processQueue = (error, token = null) => {
+const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue.forEach(prom => {
     if (error) {
       prom.reject(error);
-    } else {
+    } else if (token) {
       prom.resolve(token);
     }
   });
-
   failedQueue = [];
 };
 
-// Request Interceptor - Add token to every request
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
-    console.log('🔹 Request:', config.method.toUpperCase(), config.url);
-
     return config;
   },
-  (error) => {
-    console.error('❌ Request Error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response Interceptor - Handle token refresh
 axiosInstance.interceptors.response.use(
-  (response) => {
-    console.log('✅ Response:', response.config.url, response.status);
-
-    // Return standardized response
-    return {
-      success: true,
-      data: response.data.data || response.data,
-      message: response.data.message || 'Success',
-      status: response.status
-    };
-  },
+  (response) => ({
+    success: true as const,
+    data: response.data.data || response.data,
+    message: response.data.message || 'Success',
+    status: response.status
+  }) as any,
   async (error) => {
     const originalRequest = error.config;
 
-    console.error('❌ Response Error:', error.config?.url, error.response?.status);
-
-    // if 401 and we haven't tried to refresh yet
     if (error.response?.status === 401 && !originalRequest._retry) {
-
-      // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
           .then(token => {
-            originalRequest.headers['Authorization'] = 'Bearer ' + token;
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
             return axiosInstance(originalRequest);
           })
-          .catch(err => {
-            return Promise.reject(err);
-          });
+          .catch(err => Promise.reject(err));
       }
 
       originalRequest._retry = true;
@@ -84,7 +62,6 @@ axiosInstance.interceptors.response.use(
       const refreshToken = localStorage.getItem('refreshToken');
 
       if (!refreshToken) {
-        console.log('❌ No refresh token - redirecting to login');
         isRefreshing = false;
         authApi.logout();
         window.location.href = '/login';
@@ -92,54 +69,34 @@ axiosInstance.interceptors.response.use(
       }
 
       try {
-        console.log('🔄 Attempting to refresh token...');
-
-        // Call refresh endpoint
         const response = await axios.post(
-          'http://localhost:8080/api/auth/refresh',
+          `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/refresh`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         );
 
         if (response.data.success && response.data.data) {
           const { accessToken, refreshToken: newRefreshToken } = response.data.data;
-
-          console.log('✅ Token refreshed successfully');
-
-          // Update tokens
           localStorage.setItem('token', accessToken);
           localStorage.setItem('refreshToken', newRefreshToken);
-
-          // Update axios header
-          axiosInstance.defaults.headers.common['Authorization'] = 'Bearer ' + accessToken;
-          originalRequest.headers['Authorization'] = 'Bearer ' + accessToken;
-
-          // Process queued requests
+          axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           processQueue(null, accessToken);
           isRefreshing = false;
-
-          // Retry original request
           return axiosInstance(originalRequest);
-        } else {
-          throw new Error('Refresh failed');
         }
+        throw new Error('Refresh failed');
       } catch (refreshError) {
-        console.error('❌ Token refresh failed:', refreshError);
-
         processQueue(refreshError, null);
         isRefreshing = false;
-
-        // Clear tokens and redirect to login
         authApi.logout();
         window.location.href = '/login';
-
         return Promise.reject(refreshError);
       }
     }
 
-    // For other errors, return standardized error
     return Promise.reject({
-      success: false,
+      success: false as const,
       message: error.response?.data?.message || error.message || 'An error occurred',
       status: error.response?.status,
       data: error.response?.data
@@ -147,4 +104,27 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-export default axiosInstance;
+// Typed wrapper — tells TypeScript that all responses are { success, data, message, status }
+// matching what the interceptor above always returns at runtime.
+const typedAxios = {
+  get: <T = any>(url: string, config?: object): Promise<ApiResponse<T>> =>
+    axiosInstance.get(url, config) as unknown as Promise<ApiResponse<T>>,
+
+  post: <T = any>(url: string, data?: unknown, config?: object): Promise<ApiResponse<T>> =>
+    axiosInstance.post(url, data, config) as unknown as Promise<ApiResponse<T>>,
+
+  put: <T = any>(url: string, data?: unknown, config?: object): Promise<ApiResponse<T>> =>
+    axiosInstance.put(url, data, config) as unknown as Promise<ApiResponse<T>>,
+
+  patch: <T = any>(url: string, data?: unknown, config?: object): Promise<ApiResponse<T>> =>
+    axiosInstance.patch(url, data, config) as unknown as Promise<ApiResponse<T>>,
+
+  delete: <T = any>(url: string, config?: object): Promise<ApiResponse<T>> =>
+    axiosInstance.delete(url, config) as unknown as Promise<ApiResponse<T>>,
+
+  defaults: axiosInstance.defaults,
+  interceptors: axiosInstance.interceptors,
+};
+
+export default typedAxios;
+export type { ApiResponse };
