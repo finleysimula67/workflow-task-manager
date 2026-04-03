@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import axios from '../api/axios';
@@ -10,9 +11,9 @@ function ResetPassword() {
     newPassword: '',
     confirmPassword: ''
   });
-  const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState('');
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [token, setToken] = useState<string>('');
+  const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
     const tokenParam = searchParams.get('token');
@@ -65,7 +66,7 @@ function ResetPassword() {
     setLoading(true);
 
     try {
-      console.log('🔑 Resetting password...');
+      // Resetting password
 
       const response = await axios.post('/auth/reset-password', {
         token: token,
@@ -74,7 +75,7 @@ function ResetPassword() {
       });
 
       if (response.success) {
-        console.log('✅ Password reset successful');
+        // Success handled via toast
         toast.success('Password reset successful! You can now login with your new password.');
 
         // Redirect to login after 2 seconds
@@ -83,7 +84,7 @@ function ResetPassword() {
         }, 2000);
       }
     } catch (error) {
-      console.error('❌ Password reset failed:', error);
+      // Error shown via toast
 
       if (error.response?.data?.fieldErrors) {
         setErrors(error.response.data.fieldErrors);
