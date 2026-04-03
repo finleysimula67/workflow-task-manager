@@ -2,6 +2,8 @@ package com.nabin.workflow.controller;
 
 import com.nabin.workflow.dto.common.ApiResponse;
 import com.nabin.workflow.dto.response.UserResponseDTO;
+import com.nabin.workflow.entities.TaskStatus;
+import com.nabin.workflow.repository.TaskRepository;
 import com.nabin.workflow.services.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -9,7 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -18,19 +20,16 @@ import java.util.List;
 public class AdminController {
 
     private final UserService userService;
+    private final TaskRepository taskRepository;
 
-    /**
-     * Get all users (Admin only)
-     * GET /api/admin/users
-     */
     @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")  // Only ADMIN can access
-    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<?>> getAllUsers() {
         log.info("Admin endpoint: Getting all users");
 
-        List<UserResponseDTO> users = userService.getAllUsers();
+        var users = userService.getAllUsers();
 
-        ApiResponse<List<UserResponseDTO>> response = ApiResponse.success(
+        ApiResponse<?> response = ApiResponse.success(
                 String.format("Retrieved %d users", users.size()),
                 users
         );
@@ -38,18 +37,14 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get user by ID (Admin only)
-     * GET /api/admin/users/{id}
-     */
     @GetMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<?>> getUserById(@PathVariable Long id) {
         log.info("Admin endpoint: Getting user with ID: {}", id);
 
-        UserResponseDTO user = userService.getUserById(id);
+        var user = userService.getUserById(id);
 
-        ApiResponse<UserResponseDTO> response = ApiResponse.success(
+        ApiResponse<?> response = ApiResponse.success(
                 "User retrieved successfully",
                 user
         );
@@ -57,10 +52,31 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Delete user (Admin only)
-     * DELETE /api/admin/users/{id}
-     */
+    @GetMapping("/users/{id}/stats")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<?>> getUserStats(@PathVariable Long id) {
+        log.info("Admin endpoint: Getting stats for user ID: {}", id);
+
+        long totalTasks = taskRepository.countByUserId(id);
+        long todoTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.TODO);
+        long inProgressTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.IN_PROGRESS);
+        long completedTasks = taskRepository.countByUserIdAndStatus(id, TaskStatus.COMPLETED);
+
+        var stats = Map.of(
+                "totalTasks", totalTasks,
+                "todoTasks", todoTasks,
+                "inProgressTasks", inProgressTasks,
+                "completedTasks", completedTasks
+        );
+
+        ApiResponse<?> response = ApiResponse.success(
+                "User stats retrieved successfully",
+                stats
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     @DeleteMapping("/users/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(@PathVariable Long id) {
@@ -75,10 +91,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Get all tasks across all users (Admin only)
-     * GET /api/admin/tasks
-     */
     @GetMapping("/tasks")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> getAllTasksAdmin() {
@@ -92,10 +104,6 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Test admin access
-     * GET /api/admin/test
-     */
     @GetMapping("/test")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<String>> testAdminAccess() {
