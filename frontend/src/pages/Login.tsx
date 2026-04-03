@@ -1,7 +1,9 @@
+import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
+import { ArrowLeft } from 'lucide-react';
 
 function Login() {
   const navigate = useNavigate();
@@ -12,15 +14,11 @@ function Login() {
     password: '',
   });
 
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<any>({});
 
   /**
-   * FIX: THE "CHROME-ERROR" RECOVERY GUARD
-   * This is the heavy-duty fix for the white screen.
-   * It detects if the page is being loaded via the back button
-   * and forces a hard refresh to clear the 401 error state.
-   */
+    */
   useEffect(() => {
     const handleBackNavigation = (event) => {
       // event.persisted is true when the page is loaded from cache (Back button)
@@ -47,7 +45,7 @@ function Login() {
 
   /**
    * OAuth Error Check
-   */
+    */
   useEffect(() => {
     const error = searchParams.get('error');
     const message = searchParams.get('message');
@@ -73,7 +71,7 @@ function Login() {
   };
 
   const validate = () => {
-    const newErrors = {};
+    const newErrors: Record<string, string> = {};
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
@@ -98,7 +96,7 @@ function Login() {
     try {
       const response = await authApi.login(formData);
       if (response.success) {
-        toast.success(response.message || 'Login successful!');
+        toast.success(response.message || 'Login successful!', { id: 'login-success' });
         await new Promise((resolve) => setTimeout(resolve, 500));
         navigate('/dashboard');
       }
@@ -135,14 +133,14 @@ function Login() {
    * GOOGLE LOGIN HANDLER
    * We use assign() to keep Login in history, but the
    * listeners above handle the 'Back' button breakage.
-   */
+    */
   const handleGoogleLogin = () => {
     window.location.assign('http://localhost:8080/oauth2/authorization/google');
   };
 
   return (
       <div className="min-h-screen flex bg-[#020617]">
-        {/* BRANDING SECTION */}
+        {/* BRANDING SECTION  */}
         <div className="hidden md:flex w-1/2 relative items-center justify-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#1e3a8a,transparent_40%),radial-gradient(circle_at_80%_70%,#7c3aed,transparent_40%)]"></div>
           <div className="relative z-10 px-16 text-white">
@@ -164,15 +162,25 @@ function Login() {
           </div>
         </div>
 
-        {/* LOGIN SECTION */}
-        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-12">
-          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
+        {/* LOGIN SECTION  */}
+        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-12 relative">
+          
+          {/* Back to Home Button */}
+          <Link 
+            to="/" 
+            className="absolute top-6 left-6 flex items-center gap-2 text-gray-400 hover:text-white transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-2"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back</span>
+          </Link>
+
+          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 mt-6 md:mt-0">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
               <p className="text-gray-400">Sign in to your WorkFlow account</p>
             </div>
 
-            {/* GOOGLE BUTTON */}
+            {/* GOOGLE BUTTON  */}
             <button
                 type="button"
                 onClick={handleGoogleLogin}
@@ -232,7 +240,7 @@ function Login() {
                   <input type="checkbox" className="mr-2 accent-blue-500" />
                   Remember me
                 </label>
-                <Link to="/forgot-password" disabled className="text-sm text-blue-400 hover:text-blue-300 cursor-not-allowed">
+                <Link to="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300 pointer-events-none cursor-not-allowed opacity-50">
                   Forgot password?
                 </Link>
               </div>
