@@ -23,6 +23,7 @@ public class UserProfileDTO {
     private Set<String> roles;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String profileImage;
 
     // Statistics
     private Long totalTasks;
