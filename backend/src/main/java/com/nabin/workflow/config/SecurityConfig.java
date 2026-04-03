@@ -89,7 +89,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/api/test/**",
                                 "/login/oauth2/**",
-                                "/oauth2/**"
+                                "/oauth2/**",
+                                "/api/files/**"
                         ).permitAll()
 
                         // Admin endpoints (protected by @PreAuthorize)
