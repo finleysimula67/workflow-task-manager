@@ -1,7 +1,9 @@
+import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
+import { ArrowLeft } from 'lucide-react';
 
 function Register() {
   const navigate = useNavigate();
@@ -13,8 +15,8 @@ function Register() {
     confirmPassword: '',
   });
 
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState<boolean>(false);
+  const [errors, setErrors] = useState<any>({});
 
   /**
    * FIX: Stop the "Back" button from breaking the page.
@@ -57,7 +59,7 @@ function Register() {
   };
 
   const validate = () => {
-    const newErrors = {};
+    const newErrors: any = {};
 
     if (!formData.username) {
       newErrors.username = 'Username is required';
@@ -127,7 +129,7 @@ function Register() {
           navigate('/login');
         }, 2000);
       }
-    } catch (error) {
+    } catch (error: any) {
       const errorMessage =
           error.response?.data?.message ||
           'Registration failed. Please try again.';
@@ -168,9 +170,17 @@ function Register() {
           </div>
         </div>
 
-        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10">
-          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8">
+        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10 relative">
+          {/* Back to Home Button */}
+          <Link 
+            to="/" 
+            className="absolute top-6 left-6 flex items-center gap-2 text-gray-400 hover:text-white transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-2"
+          >
+            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back</span>
+          </Link>
 
+          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 mt-6 md:mt-0">
             <div className="text-center mb-8">
               <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
               <p className="text-gray-400">Join WorkFlow today</p>
