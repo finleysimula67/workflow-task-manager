@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from '../api/axios';
@@ -6,9 +7,9 @@ import toast from 'react-hot-toast';
 function VerifyEmail() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const [verifying, setVerifying] = useState(true);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState('');
+  const [verifying, setVerifying] = useState<boolean>(true);
+  const [success, setSuccess] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -22,12 +23,12 @@ function VerifyEmail() {
 
       try {
         setVerifying(true);
-        console.log('🔍 Verifying email with token:', token);
+        // Verifying email
 
         const response = await axios.get(`/auth/verify-email?token=${token}`);
 
         if (response.success) {
-          console.log('✅ Email verified successfully');
+          // Success handled via toast
           setSuccess(true);
           toast.success('Email verified successfully!');
 
@@ -37,7 +38,7 @@ function VerifyEmail() {
           }, 3000);
         }
       } catch (err) {
-        console.error('❌ Email verification failed:', err);
+        // Error shown via toast
         const errorMessage = err.response?.data?.message || 'Email verification failed';
         setError(errorMessage);
         toast.error(errorMessage);
