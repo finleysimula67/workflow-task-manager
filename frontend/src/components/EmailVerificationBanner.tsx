@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { authApi } from '../api/authApi';
 import axios from '../api/axios';
@@ -26,7 +27,7 @@ function EmailVerificationBanner() {
     setSending(true);
 
     try {
-      console.log('📧 Resending verification email to:', user.email);
+      // Resending verification email
 
       const response = await axios.post(`/auth/resend-verification?email=${encodeURIComponent(user.email)}`);
 
@@ -34,7 +35,7 @@ function EmailVerificationBanner() {
         toast.success('Verification email sent! Please check your inbox.');
       }
     } catch (error) {
-      console.error('❌ Resend failed:', error);
+      toast.error('Failed to send verification email');
       toast.error(error.response?.data?.message || 'Failed to send verification email');
     } finally {
       setSending(false);
