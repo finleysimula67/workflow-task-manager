@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../api/axios';
@@ -5,9 +6,9 @@ import toast from 'react-hot-toast';
 
 function ResendVerification() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sent, setSent] = useState<boolean>(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,17 +21,17 @@ function ResendVerification() {
     setLoading(true);
 
     try {
-      console.log('📧 Requesting verification email resend for:', email);
+      // Requesting verification resend
 
       const response = await axios.post(`/auth/resend-verification?email=${email}`);
 
       if (response.success) {
-        console.log('✅ Verification email sent');
+        // Email sent shown via toast
         toast.success('Verification email sent! Please check your inbox.');
         setSent(true);
       }
     } catch (error) {
-      console.error('❌ Failed to resend verification email:', error);
+      toast.error('Failed to send verification email');
       toast.error(error.response?.data?.message || 'Failed to send verification email');
     } finally {
       setLoading(false);
