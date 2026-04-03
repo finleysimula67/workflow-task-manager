@@ -8,8 +8,19 @@ import com.nabin.workflow.services.interfaces.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -19,10 +30,9 @@ public class UserProfileController {
 
     private final UserService userService;
 
-    /**
-     * Get current user's profile
-     * GET /api/users/me
-     */
+    @Value("${file.upload-dir}")
+    private String uploadDir;
+
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileDTO>> getCurrentUserProfile() {
         log.info("Getting current user profile");
@@ -37,10 +47,6 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Update current user's profile
-     * PUT /api/users/me
-     */
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<UserProfileDTO>> updateCurrentUserProfile(
             @Valid @RequestBody UpdateProfileDTO updateProfileDTO) {
@@ -57,10 +63,6 @@ public class UserProfileController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Change password (LOCAL users only)
-     * PUT /api/users/me/password
-     */
     @PutMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(
             @Valid @RequestBody ChangePasswordDTO changePasswordDTO) {
@@ -74,5 +76,50 @@ public class UserProfileController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/me/photo")
+    public ResponseEntity<ApiResponse<Map<String, String>>> uploadProfilePhoto(
+            @RequestParam("file") MultipartFile file) {
+
+        log.info("Uploading profile photo");
+
+        String profileImage = userService.uploadProfileImage(file);
+
+        ApiResponse<Map<String, String>> response = ApiResponse.success(
+                "Profile photo uploaded successfully",
+                Map.of("profileImage", profileImage)
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/profile-image/{filename}")
+    public ResponseEntity<Resource> getProfileImage(@PathVariable String filename) {
+        try {
+            String uploadPath = System.getProperty("user.dir") + "/" + uploadDir + "/profiles";
+            Path filePath = Paths.get(uploadPath).resolve(filename);
+            Resource resource = new UrlResource(filePath.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                String contentType = "image/jpeg";
+                if (filename.toLowerCase().endsWith(".png")) {
+                    contentType = "image/png";
+                } else if (filename.toLowerCase().endsWith(".gif")) {
+                    contentType = "image/gif";
+                } else if (filename.toLowerCase().endsWith(".webp")) {
+                    contentType = "image/webp";
+                }
+
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (IOException e) {
+            log.error("Error serving profile image: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
