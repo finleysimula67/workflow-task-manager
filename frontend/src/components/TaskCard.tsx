@@ -1,29 +1,24 @@
-import React from 'react';
+import type { Task } from '../types';
+import { STATUS_COLORS, PRIORITY_COLORS } from '../utils/constants';
 
-function TaskCard({ task, onEdit, onDelete, onUpdateStatus }) {
-  const getPriorityColor = (priority) => {
-    const colors = {
-      URGENT: 'bg-red-100 text-red-800',
-      HIGH: 'bg-orange-100 text-orange-800',
-      MEDIUM: 'bg-yellow-100 text-yellow-800',
-      LOW: 'bg-gray-100 text-gray-800'
-    };
-    return colors[priority] || 'bg-gray-100 text-gray-800';
+interface TaskCardProps {
+  task: Task;
+  onEdit: (task: Task) => void;
+  onDelete: (taskId: number) => void;
+  onUpdateStatus: (taskId: number, status: string) => void;
+}
+
+function TaskCard({ task, onEdit, onDelete, onUpdateStatus }: TaskCardProps) {
+  const getStatusColor = (status: string): string => {
+    return STATUS_COLORS[status] || 'bg-gray-100 text-gray-800';
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      TODO: 'bg-blue-100 text-blue-800',
-      IN_PROGRESS: 'bg-purple-100 text-purple-800',
-      COMPLETED: 'bg-green-100 text-green-800',
-      ARCHIVED: 'bg-gray-100 text-gray-800'
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+  const getPriorityColor = (priority: string): string => {
+    return PRIORITY_COLORS[priority] || 'bg-gray-100 text-gray-800';
   };
 
   return (
     <div className="bg-white rounded-lg shadow hover:shadow-lg transition p-6">
-      {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <h3 className="text-lg font-semibold text-gray-900 flex-1">{task.title}</h3>
         <div className="flex gap-2">
@@ -42,8 +37,7 @@ function TaskCard({ task, onEdit, onDelete, onUpdateStatus }) {
 
       {task.description && <p className="text-gray-600 text-sm mb-4 line-clamp-2">{task.description}</p>}
 
-      {/* Categories */}
-      {task.categories?.length > 0 && (
+      {task.categories && task.categories.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {task.categories.map((cat) => (
             <span key={cat.id} className="px-3 py-1 rounded-full text-xs font-semibold text-white" style={{ backgroundColor: cat.color }}>
@@ -53,7 +47,6 @@ function TaskCard({ task, onEdit, onDelete, onUpdateStatus }) {
         </div>
       )}
 
-      {/* Tags */}
       <div className="flex flex-wrap gap-2 mb-4">
         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(task.status)}`}>
           {task.status.replace('_', ' ')}
@@ -70,7 +63,7 @@ function TaskCard({ task, onEdit, onDelete, onUpdateStatus }) {
         </div>
       )}
 
-      {task.attachments?.length > 0 && (
+      {task.attachments && task.attachments.length > 0 && (
         <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -79,17 +72,6 @@ function TaskCard({ task, onEdit, onDelete, onUpdateStatus }) {
         </div>
       )}
 
-    {/* After attachments count, add this: */}
-    {task.commentCount > 0 && (
-      <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
-        <span>{task.commentCount} comment{task.commentCount !== 1 ? 's' : ''}</span>
-      </div>
-    )}
-
-      {/* Quick Actions */}
       <div className="flex gap-2">
         {task.status === 'TODO' && (
           <button onClick={() => onUpdateStatus(task.id, 'IN_PROGRESS')} className="flex-1 px-3 py-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 text-sm font-medium transition">
