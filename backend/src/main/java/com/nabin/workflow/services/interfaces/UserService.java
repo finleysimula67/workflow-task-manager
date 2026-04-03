@@ -7,6 +7,7 @@ import com.nabin.workflow.dto.request.UserRegistrationDTO;
 import com.nabin.workflow.dto.response.UserProfileDTO;
 import com.nabin.workflow.dto.response.UserResponseDTO;
 import jakarta.validation.Valid;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,7 +20,6 @@ public interface UserService {
     boolean existsByUsername(String username);
 
     UserResponseDTO updateUser(Long userId, @Valid UserRegistrationDTO updateDTO);
-    //  Admin methods
     List<UserResponseDTO> getAllUsers();
     void deleteUser(Long userId);
 
@@ -27,6 +27,7 @@ public interface UserService {
     UserProfileDTO getCurrentUserProfile();
     UserProfileDTO updateCurrentUserProfile(UpdateProfileDTO updateProfileDTO);
     void changePassword(ChangePasswordDTO changePasswordDTO);
+    String uploadProfileImage(MultipartFile file);
 
     void verifyEmail(String token);
     void resendVerificationEmail(String email);
