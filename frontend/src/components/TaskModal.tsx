@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import FileUpload from './FileUpload';
 import AttachmentList from './AttachmentList';
