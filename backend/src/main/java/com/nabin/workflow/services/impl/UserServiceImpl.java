@@ -24,7 +24,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -37,9 +42,6 @@ import java.util.stream.Collectors;
 @Slf4j
 public class UserServiceImpl implements UserService {
 
-    // ============================================
-    // DEPENDENCIES
-    // ============================================
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
@@ -57,34 +59,26 @@ public class UserServiceImpl implements UserService {
     @Value("${app.password-reset.token-expiration}")
     private Long passwordResetTokenExpiration;
 
-    // ============================================
-    // REGISTRATION & EMAIL VERIFICATION
-    // ============================================
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
-    /**
-     * Register new user with email verification
-     */
     @Override
     @Transactional
     public UserResponseDTO registerUser(UserRegistrationDTO registrationDTO) {
         log.info("Registering new user: {}", registrationDTO.getEmail());
 
-        // Check if email already exists
         if (userRepository.existsByEmail(registrationDTO.getEmail())) {
             log.warn("Registration failed: Email already exists - {}", registrationDTO.getEmail());
             throw new DuplicateResourceException("Email", registrationDTO.getEmail());
         }
 
-        // Check if username already exists
         if (userRepository.existsByUsername(registrationDTO.getUsername())) {
             log.warn("Registration failed: Username already exists - {}", registrationDTO.getUsername());
             throw new DuplicateResourceException("Username", registrationDTO.getUsername());
         }
 
-        // Validate business rules
         validateUserBusinessRules(registrationDTO);
 
-        // Get or create ROLE_USER
         Role userRole = roleRepository.findByName("ROLE_USER")
                 .orElseGet(() -> {
                     log.info("ROLE_USER not found, creating new role");
@@ -93,37 +87,28 @@ public class UserServiceImpl implements UserService {
                     return roleRepository.save(newRole);
                 });
 
-        // Create user (disabled until email verified)
         User user = User.builder()
                 .username(registrationDTO.getUsername())
                 .email(registrationDTO.getEmail())
                 .password(passwordEncoder.encode(registrationDTO.getPassword()))
-                .enabled(false)  // ✅ Disabled until email verified
+                .enabled(false)
                 .provider(AuthProvider.LOCAL)
                 .providerId(null)
                 .build();
 
         user.setRoles(Set.of(userRole));
 
-        // Save user
         User savedUser = userRepository.save(user);
-
-        // ✅ Generate and send verification email
         createVerificationToken(savedUser);
 
-        log.info("✅ User registered successfully - ID: {}, Email: {}, Provider: {}",
-                savedUser.getId(), savedUser.getEmail(), savedUser.getProvider());
+        log.info("User registered successfully - ID: {}, Email: {}", savedUser.getId(), savedUser.getEmail());
 
         return dtoMapper.toUserResponseDTO(savedUser);
     }
 
-    /**
-     * Create verification token and send email
-     */
     private void createVerificationToken(User user) {
         String token = UUID.randomUUID().toString();
-        LocalDateTime expiryDate = LocalDateTime.now()
-                .plusSeconds(verificationTokenExpiration / 1000);
+        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(verificationTokenExpiration / 1000);
 
         VerificationToken verificationToken = VerificationToken.builder()
                 .token(token)
@@ -133,16 +118,11 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         verificationTokenRepository.save(verificationToken);
-
-        // Send verification email
         emailService.sendVerificationEmail(user.getEmail(), user.getUsername(), token);
 
-        log.info("✅ Verification token created and email sent to: {}", user.getEmail());
+        log.info("Verification token created and email sent to: {}", user.getEmail());
     }
 
-    /**
-     * Verify email
-     */
     @Override
     @Transactional
     public void verifyEmail(String token) {
@@ -164,12 +144,9 @@ public class UserServiceImpl implements UserService {
         verificationToken.setVerified(true);
         verificationTokenRepository.save(verificationToken);
 
-        log.info("✅ Email verified successfully for user: {}", user.getEmail());
+        log.info("Email verified successfully for user: {}", user.getEmail());
     }
 
-    /**
-     * Resend verification email
-     */
     @Override
     @Transactional
     public void resendVerificationEmail(String email) {
@@ -180,35 +157,22 @@ public class UserServiceImpl implements UserService {
             throw new IllegalArgumentException("Email already verified");
         }
 
-        // Delete old token
         verificationTokenRepository.findByUser(user).ifPresent(verificationTokenRepository::delete);
-
-        // Create new token
         createVerificationToken(user);
 
-        log.info("✅ Verification email resent to: {}", email);
+        log.info("Verification email resent to: {}", email);
     }
 
-    // ============================================
-    // PASSWORD RESET
-    // ============================================
-
-    /**
-     * Forgot password - send reset email
-     */
     @Override
     @Transactional
     public void forgotPassword(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", email));
 
-        // Delete old reset tokens
         passwordResetTokenRepository.deleteByUser(user);
 
-        // Generate token
         String token = UUID.randomUUID().toString();
-        LocalDateTime expiryDate = LocalDateTime.now()
-                .plusSeconds(passwordResetTokenExpiration / 1000);
+        LocalDateTime expiryDate = LocalDateTime.now().plusSeconds(passwordResetTokenExpiration / 1000);
 
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .token(token)
@@ -218,16 +182,11 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         passwordResetTokenRepository.save(resetToken);
-
-        // Send email
         emailService.sendPasswordResetEmail(user.getEmail(), user.getUsername(), token);
 
-        log.info("✅ Password reset email sent to: {}", email);
+        log.info("Password reset email sent to: {}", email);
     }
 
-    /**
-     * Reset password
-     */
     @Override
     @Transactional
     public void resetPassword(ResetPasswordRequest request) {
@@ -253,16 +212,9 @@ public class UserServiceImpl implements UserService {
         resetToken.setUsed(true);
         passwordResetTokenRepository.save(resetToken);
 
-        log.info("✅ Password reset successfully for user: {}", user.getEmail());
+        log.info("Password reset successfully for user: {}", user.getEmail());
     }
 
-    // ============================================
-    // USER PROFILE MANAGEMENT
-    // ============================================
-
-    /**
-     * Get current user's profile with statistics
-     */
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("isAuthenticated()")
@@ -272,7 +224,6 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        // Get user statistics
         long totalTasks = taskRepository.countByUserId(userId);
         long completedTasks = taskRepository.countByUserIdAndStatus(userId, TaskStatus.COMPLETED);
         long totalCategories = categoryRepository.countByUserId(userId);
@@ -291,15 +242,13 @@ public class UserServiceImpl implements UserService {
                 .roles(roleNames)
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
+                .profileImage(user.getProfileImage())
                 .totalTasks(totalTasks)
                 .completedTasks(completedTasks)
                 .totalCategories(totalCategories)
                 .build();
     }
 
-    /**
-     * Update current user's profile
-     */
     @Override
     @Transactional
     @PreAuthorize("isAuthenticated()")
@@ -311,39 +260,28 @@ public class UserServiceImpl implements UserService {
 
         log.info("Updating profile for user: {}", user.getEmail());
 
-        // Update username if provided and different
-        if (updateProfileDTO.getUsername() != null
-                && !updateProfileDTO.getUsername().equals(user.getUsername())) {
-
+        if (updateProfileDTO.getUsername() != null && !updateProfileDTO.getUsername().equals(user.getUsername())) {
             if (userRepository.existsByUsername(updateProfileDTO.getUsername())) {
                 throw new DuplicateResourceException("Username", updateProfileDTO.getUsername());
             }
-
             user.setUsername(updateProfileDTO.getUsername());
             log.info("Username updated to: {}", updateProfileDTO.getUsername());
         }
 
-        // Update email if provided and different
-        if (updateProfileDTO.getEmail() != null
-                && !updateProfileDTO.getEmail().equals(user.getEmail())) {
-
+        if (updateProfileDTO.getEmail() != null && !updateProfileDTO.getEmail().equals(user.getEmail())) {
             if (userRepository.existsByEmail(updateProfileDTO.getEmail())) {
                 throw new DuplicateResourceException("Email", updateProfileDTO.getEmail());
             }
-
             user.setEmail(updateProfileDTO.getEmail());
             log.info("Email updated to: {}", updateProfileDTO.getEmail());
         }
 
         userRepository.save(user);
-        log.info("✅ Profile updated successfully for user: {}", userId);
+        log.info("Profile updated successfully for user: {}", userId);
 
         return getCurrentUserProfile();
     }
 
-    /**
-     * Change password (LOCAL users only)
-     */
     @Override
     @Transactional
     @PreAuthorize("isAuthenticated()")
@@ -353,44 +291,85 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        // Check if user is LOCAL (has password)
         if (user.getProvider() != AuthProvider.LOCAL) {
-            throw new IllegalArgumentException(
-                    "Cannot change password for OAuth users. " +
-                            "You registered using " + user.getProvider() + " login."
-            );
+            throw new IllegalArgumentException("Cannot change password for OAuth users.");
         }
 
-        // Verify current password
         if (!passwordEncoder.matches(changePasswordDTO.getCurrentPassword(), user.getPassword())) {
             log.warn("Password change failed: Incorrect current password for user {}", userId);
             throw new UnauthorizedException("Current password is incorrect");
         }
 
-        // Verify new password matches confirmation
         if (!changePasswordDTO.getNewPassword().equals(changePasswordDTO.getConfirmPassword())) {
             throw new IllegalArgumentException("New password and confirm password do not match");
         }
 
-        // Verify new password is different from current
         if (passwordEncoder.matches(changePasswordDTO.getNewPassword(), user.getPassword())) {
             throw new IllegalArgumentException("New password must be different from current password");
         }
 
-        // Update password
         user.setPassword(passwordEncoder.encode(changePasswordDTO.getNewPassword()));
         userRepository.save(user);
 
-        log.info("✅ Password changed successfully for user: {}", userId);
+        log.info("Password changed successfully for user: {}", userId);
     }
 
-    // ============================================
-    // USER CRUD OPERATIONS
-    // ============================================
+    @Override
+    @Transactional
+    @PreAuthorize("isAuthenticated()")
+    public String uploadProfileImage(MultipartFile file) {
+        Long userId = SecurityUtil.getCurrentUserId();
 
-    /**
-     * Get user by ID
-     */
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty");
+        }
+
+        String contentType = file.getContentType();
+        if (contentType == null || !contentType.startsWith("image/")) {
+            throw new IllegalArgumentException("Only image files are allowed");
+        }
+
+        if (file.getSize() > 30 * 1024 * 1024) {
+            throw new IllegalArgumentException("File size exceeds 30MB limit");
+        }
+
+        try {
+            String uploadPath = System.getProperty("user.dir") + "/" + uploadDir + "/profiles";
+            Path uploadDirPath = Paths.get(uploadPath);
+
+            if (!Files.exists(uploadDirPath)) {
+                Files.createDirectories(uploadDirPath);
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            String extension = "";
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+
+            String newFilename = "user_" + userId + "_" + System.currentTimeMillis() + extension;
+            Path filePath = uploadDirPath.resolve(newFilename);
+
+            Files.write(filePath, file.getBytes());
+
+            String imageUrl = "/api/files/profiles/" + newFilename;
+
+            user.setProfileImage(imageUrl);
+            userRepository.save(user);
+
+            log.info("Profile image uploaded for user {}: {}", userId, imageUrl);
+
+            return imageUrl;
+
+        } catch (IOException e) {
+            log.error("Failed to upload profile image for user {}: {}", userId, e.getMessage());
+            throw new RuntimeException("Failed to upload profile image: " + e.getMessage());
+        }
+    }
+
     @Override
     @Transactional(readOnly = true)
     public UserResponseDTO getUserById(Long id) {
@@ -399,9 +378,6 @@ public class UserServiceImpl implements UserService {
         return dtoMapper.toUserResponseDTO(user);
     }
 
-    /**
-     * Get user by email
-     */
     @Override
     @Transactional(readOnly = true)
     public UserResponseDTO getUserByEmail(String email) {
@@ -410,9 +386,6 @@ public class UserServiceImpl implements UserService {
         return dtoMapper.toUserResponseDTO(user);
     }
 
-    /**
-     * Get user by username
-     */
     @Override
     @Transactional(readOnly = true)
     public UserResponseDTO getUserByUsername(String username) {
@@ -421,50 +394,35 @@ public class UserServiceImpl implements UserService {
         return dtoMapper.toUserResponseDTO(user);
     }
 
-    /**
-     * Check if email exists
-     */
     @Override
     @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         return userRepository.existsByEmail(email);
     }
 
-    /**
-     * Check if username exists
-     */
     @Override
     @Transactional(readOnly = true)
     public boolean existsByUsername(String username) {
         return userRepository.existsByUsername(username);
     }
 
-    /**
-     * Update user
-     */
     @Override
     @Transactional
     public UserResponseDTO updateUser(Long userId, UserRegistrationDTO updateDTO) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        // Check for unique username
-        if (!user.getUsername().equals(updateDTO.getUsername()) &&
-                userRepository.existsByUsername(updateDTO.getUsername())) {
+        if (!user.getUsername().equals(updateDTO.getUsername()) && userRepository.existsByUsername(updateDTO.getUsername())) {
             throw new DuplicateResourceException("Username", updateDTO.getUsername());
         }
 
-        // Check for unique email
-        if (!user.getEmail().equals(updateDTO.getEmail()) &&
-                userRepository.existsByEmail(updateDTO.getEmail())) {
+        if (!user.getEmail().equals(updateDTO.getEmail()) && userRepository.existsByEmail(updateDTO.getEmail())) {
             throw new DuplicateResourceException("Email", updateDTO.getEmail());
         }
 
-        // Update fields
         user.setUsername(updateDTO.getUsername());
         user.setEmail(updateDTO.getEmail());
 
-        // Update password if provided
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(updateDTO.getPassword()));
         }
@@ -474,40 +432,24 @@ public class UserServiceImpl implements UserService {
         return dtoMapper.toUserResponseDTO(user);
     }
 
-    // ============================================
-    // ADMIN OPERATIONS
-    // ============================================
-
-    /**
-     * Get all users (Admin only)
-     */
     @Override
     @Transactional(readOnly = true)
     @PreAuthorize("hasRole('ADMIN')")
     public List<UserResponseDTO> getAllUsers() {
         log.info("Getting all users");
-
         List<User> users = userRepository.findAll();
-
-        return users.stream()
-                .map(dtoMapper::toUserResponseDTO)
-                .collect(Collectors.toList());
+        return users.stream().map(dtoMapper::toUserResponseDTO).collect(Collectors.toList());
     }
 
-    /**
-     * Delete user (Admin only)
-     */
     @Override
     @Transactional
     @PreAuthorize("hasRole('ADMIN')")
     public void deleteUser(Long userId) {
         log.info("Attempting to delete user: {}", userId);
 
-        // Verify user exists
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
-        // Prevent self-deletion
         Long currentUserId = SecurityUtil.getCurrentUserId();
         if (currentUserId.equals(userId)) {
             throw new IllegalArgumentException("Cannot delete your own account");
@@ -516,26 +458,18 @@ public class UserServiceImpl implements UserService {
         log.info("Deleting user: {} ({})", user.getEmail(), userId);
 
         try {
-            // Delete in order (child entities first)
-
-            // 1. Refresh tokens
             refreshTokenRepository.deleteByUser(user);
             log.debug("Deleted refresh tokens for user: {}", userId);
 
-            // 2. Tasks
             taskRepository.deleteByUserId(userId);
             log.debug("Deleted tasks for user: {}", userId);
 
-            // 3. Categories
             categoryRepository.deleteByUserId(userId);
             log.debug("Deleted categories for user: {}", userId);
 
-            // 4. Clear role associations
             user.getRoles().clear();
             userRepository.saveAndFlush(user);
-            log.debug("Cleared role associations for user: {}", userId);
 
-            // 5. Delete user
             userRepository.delete(user);
             log.info("User deleted successfully: {}", userId);
 
@@ -545,37 +479,23 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    // ============================================
-    // VALIDATION & UTILITIES
-    // ============================================
-
-    /**
-     * Validate user business rules
-     */
     private void validateUserBusinessRules(UserRegistrationDTO registrationDTO) {
         String[] reservedWords = {"admin", "root", "system", "administrator", "moderator"};
         String usernameLower = registrationDTO.getUsername().toLowerCase();
 
         for (String reserved : reservedWords) {
             if (usernameLower.contains(reserved)) {
-                throw new InvalidBusinessRuleException(
-                        "Username cannot contain reserved word: " + reserved
-                );
+                throw new InvalidBusinessRuleException("Username cannot contain reserved word: " + reserved);
             }
         }
     }
 
-    /**
-     * Scheduled cleanup of expired tokens (Daily at 4 AM)
-     */
     @Scheduled(cron = "0 0 4 * * ?")
     @Transactional
     public void cleanupExpiredTokens() {
         log.info("Cleaning up expired tokens...");
-
         verificationTokenRepository.deleteExpiredTokens(LocalDateTime.now());
         passwordResetTokenRepository.deleteExpiredTokens(LocalDateTime.now());
-
         log.info("Expired tokens cleaned up");
     }
 }
