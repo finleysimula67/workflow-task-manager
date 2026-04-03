@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState, useEffect } from 'react';
 import { commentApi } from '../api/commentApi';
 import { authApi } from '../api/authApi';
@@ -24,7 +25,7 @@ function CommentSection({ taskId }) {
         setComments(res.data);
       }
     } catch (err) {
-      console.error('Load comments error:', err);
+      // console.error('Load comments error:', err);
     } finally {
       setLoading(false);
     }
