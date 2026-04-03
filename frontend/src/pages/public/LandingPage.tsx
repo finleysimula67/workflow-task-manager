@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useEffect } from 'react'; // Added useEffect
 import { Link } from 'react-router-dom';
 import PublicNavbar from '../../components/PublicNavbar';
