@@ -32,7 +32,6 @@ public class TaskController {
 
     // -------------------------------------------------------
     // POST /api/tasks — Create task
-    // FIX: was TaskRequestDTO, now TaskCreateDTO
     // -------------------------------------------------------
     @PostMapping
     @PreAuthorize("isAuthenticated()")
