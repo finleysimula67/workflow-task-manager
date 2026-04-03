@@ -309,8 +309,8 @@ public class TaskServiceImpl implements TaskService {
     // =========================================================
 
     /**
-     * FIX #5: Full transition validation via canTransitionTo() on entity.
-     * Also sets/clears completedAt timestamp automatically.
+     **
+      * Validates status transitions and updates completedAt timestamp automatically.
      */
     private void updateTaskStatusInternal(Task task, TaskStatus newStatus) {
         if (!task.canTransitionTo(newStatus)) {
@@ -331,8 +331,6 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
-     * FIX #1: Due date validation uses LocalDate.now(), not LocalDateTime.
-     * FIX #3: Only called during CREATE — not blindly during updates.
      */
     private void validateDueDateForCreate(LocalDate dueDate) {
         if (dueDate == null) return;
@@ -346,7 +344,7 @@ public class TaskServiceImpl implements TaskService {
     }
 
     /**
-     * FIX #9: HIGH/URGENT priority requires a due date.
+     * HIGH/URGENT priority requires a due date.
      * During updates, resolvedDueDate is the task's effective due date (existing or newly set).
      */
     private void validatePriorityRequiresDueDate(TaskPriority priority, LocalDate resolvedDueDate) {
