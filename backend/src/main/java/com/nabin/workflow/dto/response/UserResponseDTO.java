@@ -18,4 +18,5 @@ public class UserResponseDTO {
     private Boolean enabled;
     private LocalDateTime createdAt;
     private Set<RoleResponseDTO> roles;
+    private String profileImage;
 }
