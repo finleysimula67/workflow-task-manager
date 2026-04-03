@@ -53,6 +53,7 @@ public class DTOMapper {
                 .email(user.getEmail())
                 .enabled(user.getEnabled())
                 .createdAt(user.getCreatedAt())
+                .profileImage(user.getProfileImage())
                 .roles(user.getRoles().stream()
                         .map(role -> RoleResponseDTO.builder()
                                 .id(role.getId())
