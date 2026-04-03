@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { attachmentApi } from '../api/attachmentApi';
 import toast from 'react-hot-toast';
@@ -60,7 +61,7 @@ function AttachmentList({ attachments, onDelete }) {
       window.URL.revokeObjectURL(url);
       toast.success('File downloaded!');
     } catch (error) {
-      console.error('Download error:', error);
+      toast.error('Failed to download file');
       toast.error('Failed to download file');
     }
   };
@@ -76,7 +77,7 @@ function AttachmentList({ attachments, onDelete }) {
         const url = window.URL.createObjectURL(blob);
         setPreviewImage({ url, name: attachment.originalFileName });
       } catch (error) {
-        console.error('Preview error:', error);
+        toast.error('Failed to preview file');
         toast.error('Failed to preview image');
       }
     } else if (isPDF(attachment.fileType)) {
@@ -100,7 +101,7 @@ function AttachmentList({ attachments, onDelete }) {
         if (onDelete) onDelete(attachmentId);
       }
     } catch (error) {
-      console.error('Delete error:', error);
+      toast.error('Failed to delete file');
       toast.error('Failed to delete attachment');
     } finally {
       setDeleting(null);
