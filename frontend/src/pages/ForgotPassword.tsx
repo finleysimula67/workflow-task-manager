@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../api/axios';
@@ -5,9 +6,9 @@ import toast from 'react-hot-toast';
 
 function ForgotPassword() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [sent, setSent] = useState(false);
+  const [email, setEmail] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [sent, setSent] = useState<boolean>(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,17 +21,17 @@ function ForgotPassword() {
     setLoading(true);
 
     try {
-      console.log('🔑 Requesting password reset for:', email);
+      // Requesting password reset
 
       const response = await axios.post('/auth/forgot-password', { email });
 
       if (response.success) {
-        console.log('✅ Password reset email sent');
+        // Email sent confirmation shown via toast
         toast.success('Password reset email sent! Please check your inbox.');
         setSent(true);
       }
     } catch (error) {
-      console.error('❌ Failed to send password reset email:', error);
+      // Error handled - showing generic success for security
 
       // Always show success message for security (don't reveal if email exists)
       toast.success('If an account exists with this email, a password reset link has been sent.');
