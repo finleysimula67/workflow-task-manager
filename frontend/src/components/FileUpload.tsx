@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useState } from 'react';
 import { attachmentApi } from '../api/attachmentApi';
 import toast from 'react-hot-toast';
@@ -46,20 +47,20 @@ function FileUpload({ taskId, onUploadSuccess }) {
     setUploading(true);
 
     try {
-      console.log('📤 Uploading file:', file.name);
+      // Upload in progress
 
       const response = await attachmentApi.uploadFile(taskId, file);
 
       if (response.success) {
         toast.success('File uploaded successfully!');
-        console.log('✅ Upload success:', response.data);
+        // Upload completed
 
         if (onUploadSuccess) {
           onUploadSuccess(response.data);
         }
       }
     } catch (error) {
-      console.error('❌ Upload error:', error);
+      toast.error('Failed to upload file');
       toast.error(error.message || 'Failed to upload file');
     } finally {
       setUploading(false);
