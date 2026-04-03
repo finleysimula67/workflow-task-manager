@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -18,7 +19,7 @@ function AuthCallback() {
           return;
         }
 
-        console.log('OAuth tokens received');
+        // OAuth tokens received
 
         // Save tokens
         localStorage.setItem('token', token);
@@ -38,14 +39,14 @@ function AuthCallback() {
 
         localStorage.setItem('user', JSON.stringify(user));
 
-        console.log('User info saved:', user);
-        toast.success('Successfully logged in with Google!');
+        // User info saved
+        toast.success('Successfully logged in with Google!', { id: 'login-success' });
 
         // Move to dashboard and clear this page from history
         navigate('/dashboard', { replace: true });
 
       } catch (error) {
-        console.error('OAuth callback error:', error);
+        // OAuth error shown via toast
         toast.error('Authentication failed. Please try again.');
         navigate('/login', { replace: true });
       }
