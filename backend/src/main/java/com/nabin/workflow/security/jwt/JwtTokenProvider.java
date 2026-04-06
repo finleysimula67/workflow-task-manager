@@ -19,16 +19,16 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:defaultSecretKeyThatIsVeryLongAndSecureEnoughToSatisfyHMACSHA512Require}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpirationMs;
 
     @Value("${jwt.issuer:WorkFlow}")
     private String jwtIssuer;
 
-    @Value("${jwt.refresh-expiration}")
+    @Value("${jwt.refresh-expiration:604800000}")
     private Long jwtRefreshExpirationMs;
 
     public Long getJwtRefreshExpirationMs() {
