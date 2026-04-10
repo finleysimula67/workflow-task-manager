@@ -3,9 +3,10 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
+import type { PasswordStrength } from '../types';
 
-function Register() {
+function Register(): ReactElement {
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -15,15 +16,14 @@ function Register() {
     confirmPassword: '',
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const [errors, setErrors] = useState<any>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>('weak');
 
-  /**
-   * FIX: Stop the "Back" button from breaking the page.
-   * We force a reload if the browser tries to load this from cache.
-   */
   useEffect(() => {
-    const handlePageShow = (event) => {
+    const handlePageShow = (event: PagesTransitionEvent) => {
       if (event.persisted) {
         window.location.reload();
       }
@@ -32,34 +32,88 @@ function Register() {
     return () => window.removeEventListener('pageshow', handlePageShow);
   }, []);
 
-  /**
-   * HANDLER: Google Sign Up
-   * Using location. replace prevents the Google transition from
-   * creating a broken history entry that causes white screens.
-   */
   const handleGoogleSignUp = () => {
     const googleAuthUrl = 'http://localhost:8080/oauth2/authorization/google';
     window.location.assign(googleAuthUrl);
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [name]: value,
     }));
 
     if (errors[name]) {
-      setErrors((prev) => ({
-        ...prev,
-        [name]: '',
-      }));
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+
+    // Calculate password strength when password changes
+    if (name === 'password') {
+      setPasswordStrength(calculatePasswordStrength(value));
     }
   };
 
+  const calculatePasswordStrength = (password: string): PasswordStrength => {
+    if (!password) return 'weak';
+    
+    let score = 0;
+    
+    // Length checks
+    if (password.length >= 8) score++;
+    if (password.length >= 12) score++;
+    if (password.length >= 16) score++;
+    
+    // Character type checks
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[@#$%^&+=!]/.test(password)) score++;
+    
+    if (score <= 2) return 'weak';
+    if (score <= 4) return 'fair';
+    if (score <= 6) return 'good';
+    return 'strong';
+  };
+
+  const getStrengthColor = (strength: PasswordStrength): string => {
+    switch (strength) {
+      case 'weak': return 'bg-red-500';
+      case 'fair': return 'bg-orange-500';
+      case 'good': return 'bg-yellow-500';
+      case 'strong': return 'bg-green-500';
+    }
+  };
+
+  const getStrengthLabel = (strength: PasswordStrength): string => {
+    switch (strength) {
+      case 'weak': return 'Weak';
+      case 'fair': return 'Fair';
+      case 'good': return 'Good';
+      case 'strong': return 'Strong';
+    }
+  };
+
+  const getStrengthWidth = (strength: PasswordStrength): string => {
+    switch (strength) {
+      case 'weak': return '25%';
+      case 'fair': return '50%';
+      case 'good': return '75%';
+      case 'strong': return '100%';
+    }
+  };
+
+  const passwordRequirements = [
+    { label: 'At least 8 characters', met: formData.password.length >= 8 },
+    { label: 'Contains uppercase letter', met: /[A-Z]/.test(formData.password) },
+    { label: 'Contains lowercase letter', met: /[a-z]/.test(formData.password) },
+    { label: 'Contains number', met: /[0-9]/.test(formData.password) },
+    { label: 'Contains special character', met: /[@#$%^&+=!]/.test(formData.password) },
+  ];
+
   const validate = () => {
-    const newErrors: any = {};
+    const newErrors: Record<string, string> = {};
 
     if (!formData.username) {
       newErrors.username = 'Username is required';
@@ -68,8 +122,7 @@ function Register() {
     } else if (formData.username.length > 50) {
       newErrors.username = 'Username must not exceed 50 characters';
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username =
-          'Username can only contain letters, numbers, underscores and hyphens';
+      newErrors.username = 'Username can only contain letters, numbers, underscores and hyphens';
     }
 
     if (!formData.email) {
@@ -82,15 +135,6 @@ function Register() {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
-    } else if (!/(?=.*[0-9])/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one number';
-    } else if (!/(?=.*[a-z])/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one lowercase letter';
-    } else if (!/(?=.*[A-Z])/.test(formData.password)) {
-      newErrors.password = 'Password must contain at least one uppercase letter';
-    } else if (!/(?=.*[@#$%^&+=])/.test(formData.password)) {
-      newErrors.password =
-          'Password must contain at least one special character (@#$%^&+=)';
     }
 
     if (!formData.confirmPassword) {
@@ -103,7 +147,7 @@ function Register() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validate()) return;
@@ -171,17 +215,8 @@ function Register() {
         </div>
 
         <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10 relative">
-          {/* Back to Home Button */}
-          <Link 
-            to="/" 
-            className="absolute top-6 left-6 flex items-center gap-2 text-gray-400 hover:text-white transition group focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-2"
-          >
-            <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm font-medium">Back</span>
-          </Link>
-
-          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 mt-6 md:mt-0">
-            <div className="text-center mb-8">
+          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 mt-6 md:mt-0 max-h-[90vh] overflow-y-auto">
+            <div className="text-center mb-6">
               <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
               <p className="text-gray-400">Join WorkFlow today</p>
             </div>
@@ -205,7 +240,7 @@ function Register() {
               <div className="flex-grow border-t border-white/10"></div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Username</label>
                 <input
@@ -216,7 +251,7 @@ function Register() {
                     placeholder="johndoe"
                     className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
                         errors.username ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
                 />
                 {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username}</p>}
               </div>
@@ -231,39 +266,118 @@ function Register() {
                     placeholder="you@example.com"
                     className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
                         errors.email ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
+                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
                 />
                 {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
               </div>
 
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Password</label>
-                <input
-                    type="password"
-                    name="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    placeholder="Create a strong password"
-                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                        errors.password ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
-                />
+                <div className="relative">
+                  <input
+                      type={showPassword ? 'text' : 'password'}
+                      name="password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      placeholder="Create a strong password"
+                      className={`w-full px-4 py-3 pr-12 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                          errors.password ? 'border-red-500' : 'border-white/10'
+                      } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
+                  />
+                  <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
                 {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
+                
+                {/* Password Strength Indicator */}
+                {formData.password && (
+                  <div className="mt-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-gray-400">Strength</span>
+                      <span className={`text-xs font-medium ${
+                        passwordStrength === 'weak' ? 'text-red-400' :
+                        passwordStrength === 'fair' ? 'text-orange-400' :
+                        passwordStrength === 'good' ? 'text-yellow-400' :
+                        'text-green-400'
+                      }`}>
+                        {getStrengthLabel(passwordStrength)}
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength)}`}
+                        style={{ width: getStrengthWidth(passwordStrength) }}
+                      />
+                    </div>
+                    
+                    {/* Password Requirements */}
+                    <div className="mt-3 space-y-1.5">
+                      {passwordRequirements.map((req, index) => (
+                        <div 
+                          key={index}
+                          className={`flex items-center gap-2 text-xs transition-colors ${
+                            req.met ? 'text-green-400' : 'text-gray-500'
+                          }`}
+                        >
+                          {req.met ? (
+                            <Check size={14} className="flex-shrink-0" />
+                          ) : (
+                            <X size={14} className="flex-shrink-0" />
+                          )}
+                          <span>{req.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
                 <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
-                <input
-                    type="password"
-                    name="confirmPassword"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    placeholder="Re-enter your password"
-                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                        errors.confirmPassword ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none`}
-                />
+                <div className="relative">
+                  <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      value={formData.confirmPassword}
+                      onChange={handleChange}
+                      placeholder="Re-enter your password"
+                      className={`w-full px-4 py-3 pr-12 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
+                          errors.confirmPassword ? 'border-red-500' : 'border-white/10'
+                      } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
+                  />
+                  <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1"
+                  >
+                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
                 {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
+                
+                {/* Password Match Indicator */}
+                {formData.confirmPassword && (
+                  <div className={`mt-1 flex items-center gap-2 text-xs ${
+                    formData.password === formData.confirmPassword ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {formData.password === formData.confirmPassword ? (
+                      <>
+                        <Check size={14} />
+                        <span>Passwords match</span>
+                      </>
+                    ) : (
+                      <>
+                        <X size={14} />
+                        <span>Passwords do not match</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               <button
@@ -281,7 +395,7 @@ function Register() {
 
             <p className="text-center text-gray-500 text-sm mt-6">
               Already have an account?{' '}
-              <Link to="/login" className="text-blue-400 hover:text-blue-300">
+              <Link to="/login" className="text-blue-400 hover:text-blue-300 transition">
                 Sign In
               </Link>
             </p>
