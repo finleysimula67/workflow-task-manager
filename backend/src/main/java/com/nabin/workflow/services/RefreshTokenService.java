@@ -33,15 +33,23 @@ public class RefreshTokenService {
      */
     @Transactional
     public RefreshToken createRefreshToken(Long userId, HttpServletRequest request) {
+        return createRefreshToken(userId, request, refreshTokenExpirationMs);
+    }
+
+    /**
+     * Create a new refresh token for user with custom expiration
+     */
+    @Transactional
+    public RefreshToken createRefreshToken(Long userId, HttpServletRequest request, long expirationMs) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         // Generate unique token
         String token = UUID.randomUUID().toString();
 
-        // Calculate expiry date
+        // Calculate expiry date with custom expiration
         LocalDateTime expiryDate = LocalDateTime.now()
-                .plusSeconds(refreshTokenExpirationMs / 1000);
+                .plusSeconds(expirationMs / 1000);
 
         // Extract device info
         String userAgent = request.getHeader("User-Agent");
@@ -58,7 +66,7 @@ public class RefreshTokenService {
 
         RefreshToken savedToken = refreshTokenRepository.save(refreshToken);
 
-        log.info("Refresh token created for user: {} (expires: {})", userId, expiryDate);
+        log.info("Refresh token created for user: {} (expires: {}, duration: {} ms)", userId, expiryDate, expirationMs);
 
         return savedToken;
     }
