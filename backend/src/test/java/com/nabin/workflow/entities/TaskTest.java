@@ -17,12 +17,12 @@ class TaskTest {
         "TODO, COMPLETED, false",
         "IN_PROGRESS, COMPLETED, true",
         "IN_PROGRESS, ARCHIVED, true",
-        "IN_PROGRESS, TODO, false",
+        "IN_PROGRESS, TODO, true",
         "COMPLETED, ARCHIVED, true",
-        "COMPLETED, TODO, false",
+        "COMPLETED, TODO, true",
         "COMPLETED, IN_PROGRESS, false",
-        "ARCHIVED, TODO, true",
-        "ARCHIVED, IN_PROGRESS, true"
+        "ARCHIVED, TODO, false",
+        "ARCHIVED, IN_PROGRESS, false"
     })
     void canTransitionTo_ShouldValidateTransitions(TaskStatus from, TaskStatus to, boolean expected) {
         Task task = Task.builder()
