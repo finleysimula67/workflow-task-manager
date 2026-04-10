@@ -1,0 +1,127 @@
+spring:
+  application:
+    name: WorkFlow
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskmanager_db
+    username: postgres
+    password: nabin99
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
+
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+    open-in-view: false
+
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      max-request-size: 50MB
+      file-size-threshold: 2KB
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 74808369318-qu1b3taqbc3b0bnvtjr01ujkppcla1la.apps.googleusercontent.com
+            client-secret: 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
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            client-name: Google
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://www.googleapis.com/oauth2/v4/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+  devtools:
+    restart:
+      enabled: true
+    livereload:
+      enabled: true
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nabinoli986@gmail.com
+    password: zqdr fjac mszs sayo
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+    default-encoding: UTF-8
+
+server:
+  port: 8080
+  tomcat:
+    max-http-form-post-size: 52428800
+    max-swallow-size: 52428800
+  servlet:
+    context-path: /
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
+
+app:
+  oauth2:
+    redirect-uri: http://localhost:5173/auth/callback
+  email:
+    from: nabinoli986@gmail.com
+    from-name: WorkFlow Team
+  frontend:
+    url: http://localhost:5173
+  verification:
+    token-expiration: 86400000
+  password-reset:
+    token-expiration: 3600000
+
+jwt:
+  secret: MySecretKeyForJWTTokenGenerationMustBeAtLeast256BitsLongForHS256Algorithm
+  expiration: 900000
+  refresh-expiration: 604800000
+  remember-me-expiration: 2592000000
+  issuer: WorkFlow
+
+cors:
+  allowed:
+    origins: http://localhost:3000,http://localhost:5173,http://localhost:5174,http://localhost:4200
+
+file:
+  upload-dir: uploads
+
+logging:
+  level:
+    root: INFO
+    com.nabin.workflow: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+  file:
+    name: logs/workflow.log
+    max-size: 10MB
+    max-history: 30
