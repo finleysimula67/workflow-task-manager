@@ -7,13 +7,22 @@ export const authApi = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthTokens>> => {
     const response = await axios.post(`${API_URL}/auth/login`, credentials);
     if (response.data.success && response.data.data) {
-      const { token: accessToken, refreshToken, user } = response.data.data;
+      const { token: accessToken, refreshToken, user, lastLoginAt } = response.data.data;
       if (!accessToken || !refreshToken || !user) {
         throw new Error('Invalid response from server');
       }
       localStorage.setItem('token', accessToken);
       localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(user));
+      
+      if (lastLoginAt) {
+        localStorage.setItem('lastLogin', lastLoginAt);
+      }
+      
+      if (credentials.rememberMe) {
+        localStorage.setItem('rememberedEmail', credentials.email);
+      }
+      
       return {
         success: true,
         data: response.data.data,
@@ -120,5 +129,17 @@ export const authApi = {
       const updatedUser = { ...user, ...userData };
       localStorage.setItem('user', JSON.stringify(updatedUser));
     }
+  },
+
+  getRememberedEmail: (): string | null => {
+    return localStorage.getItem('rememberedEmail');
+  },
+
+  getLastLogin: (): string | null => {
+    return localStorage.getItem('lastLogin');
+  },
+
+  clearRememberedEmail: (): void => {
+    localStorage.removeItem('rememberedEmail');
   }
 };
