@@ -73,4 +73,7 @@ public class User {
     @Column(name = "profile_image", length = 500)
     private String profileImage;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
 }
