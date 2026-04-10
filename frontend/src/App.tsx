@@ -19,6 +19,8 @@ import ResetPassword from './pages/ResetPassword';
 import Tasks from './pages/Tasks';
 import Categories from './pages/Categories';
 import Statistics from './pages/Statistics';
+import ChangePassword from './pages/ChangePassword';
+import LoginHistory from './pages/LoginHistory';
 import LandingPage from './pages/public/LandingPage';
 import About from './pages/public/About';
 import Features from './pages/public/Features';
@@ -84,6 +86,8 @@ function App() {
                         <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
                         <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
                         <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+                        <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+                        <Route path="/login-history" element={<ProtectedRoute><LoginHistory /></ProtectedRoute>} />
                         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                         <Route path="/admin/users/:userId" element={<AdminRoute><UserDetails /></AdminRoute>} />
                     </Route>
