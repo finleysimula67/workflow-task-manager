@@ -35,11 +35,13 @@ export interface AuthTokens {
   token: string;
   refreshToken: string;
   user: User;
+  lastLoginAt?: string;
 }
 
 export interface LoginCredentials {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface RegisterData {
@@ -47,6 +49,8 @@ export interface RegisterData {
   email: string;
   password: string;
 }
+
+export type PasswordStrength = 'weak' | 'fair' | 'good' | 'strong';
 
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'COMPLETED' | 'ARCHIVED';
 export type TaskPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
