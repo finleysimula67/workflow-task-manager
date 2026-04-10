@@ -11,6 +11,12 @@ import com.nabin.workflow.repository.TaskRepository;
 import com.nabin.workflow.repository.UserRepository;
 import com.nabin.workflow.services.impl.TaskServiceImpl;
 import com.nabin.workflow.util.SecurityUtil;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import com.nabin.workflow.security.user.UserPrincipal;
+import java.util.Collections;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -81,6 +87,21 @@ class TaskServiceImplTest {
                 .build();
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void mockSecurityContext(Long userId) {
+        UserPrincipal principal = new UserPrincipal(userId, "testuser", "test@example.com", "password", true, Collections.emptyList());
+        Authentication auth = mock(Authentication.class);
+        lenient().when(auth.isAuthenticated()).thenReturn(true);
+        lenient().when(auth.getPrincipal()).thenReturn(principal);
+        SecurityContext ctx = mock(SecurityContext.class);
+        lenient().when(ctx.getAuthentication()).thenReturn(auth);
+        SecurityContextHolder.setContext(ctx);
+    }
+
     @Nested
     @DisplayName("Task Creation Tests")
     class TaskCreationTests {
@@ -88,7 +109,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should create task successfully with valid data")
         void createTask_WithValidData_ShouldSucceed() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
             when(taskRepository.save(any(Task.class))).thenReturn(testTask);
             when(dtoMapper.toTaskResponseDTO(any(Task.class))).thenReturn(
@@ -109,7 +130,7 @@ class TaskServiceImplTest {
                     .dueDate(LocalDate.now().minusDays(1))
                     .build();
 
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
             assertThatThrownBy(() -> taskService.createTask(invalidRequest))
@@ -120,7 +141,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should throw exception when user not found")
         void createTask_WithNonExistentUser_ShouldThrowException() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(999L);
+            mockSecurityContext(999L);
             when(userRepository.findById(999L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> taskService.createTask(validTaskRequest))
@@ -136,7 +157,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should get task by ID successfully")
         void getTaskById_WithValidId_ShouldReturnTask() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(taskRepository.findByIdAndUserId(1L, 1L)).thenReturn(Optional.of(testTask));
             when(dtoMapper.toTaskResponseDTO(testTask)).thenReturn(
                 TaskResponseDTO.builder().id(1L).title("Test Task").build());
@@ -150,7 +171,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should throw exception when task not found")
         void getTaskById_WithNonExistentId_ShouldThrowException() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(taskRepository.findByIdAndUserId(999L, 1L)).thenReturn(Optional.empty());
 
             assertThatThrownBy(() -> taskService.getTaskById(999L))
@@ -165,7 +186,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should transition from TODO to IN_PROGRESS")
         void updateTaskStatus_TodoToInProgress_ShouldSucceed() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(taskRepository.findByIdAndUserId(1L, 1L)).thenReturn(Optional.of(testTask));
             when(taskRepository.save(any(Task.class))).thenReturn(testTask);
             when(dtoMapper.toTaskResponseDTO(any(Task.class))).thenReturn(
@@ -184,7 +205,7 @@ class TaskServiceImplTest {
         @Test
         @DisplayName("Should delete task successfully")
         void deleteTask_WithValidId_ShouldSucceed() {
-            when(SecurityUtil.getCurrentUserId()).thenReturn(1L);
+            mockSecurityContext(1L);
             when(taskRepository.findByIdAndUserId(1L, 1L)).thenReturn(Optional.of(testTask));
             doNothing().when(taskRepository).delete(testTask);
 
