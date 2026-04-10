@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from '../../api/axios';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import BottomNavigation from '../common/BottomNavigation';
 import { useTheme } from '../../context/ThemeContext';
 import { authApi } from '../../api/authApi';
 import type { User } from '../../types';
@@ -211,10 +212,13 @@ export default function ProtectedLayout() {
       <main className={`min-h-screen transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
       }`}>
-        <div className="p-4 lg:p-8 pt-20 lg:pt-8">
+        <div className="p-4 lg:p-8 pt-20 lg:pt-8 pb-24 lg:pb-8">
           <Outlet />
         </div>
       </main>
+
+      {/* Bottom Navigation for Mobile */}
+      <BottomNavigation />
 
       {/* Click outside to close profile dropdown */}
       {profileDropdownOpen && (
