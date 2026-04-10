@@ -13,12 +13,15 @@ import com.nabin.workflow.services.RefreshTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -31,9 +34,15 @@ public class AuthenticationService {
     private final DTOMapper dtoMapper;
     private final RefreshTokenService refreshTokenService;
 
+    @Value("${jwt.refresh-expiration}")
+    private Long refreshTokenExpirationMs;
+
+    @Value("${jwt.remember-me-expiration}")
+    private Long rememberMeExpirationMs;
+
     @Transactional
     public LoginResponseDTO authenticateUser(UserLoginDTO loginDTO, HttpServletRequest request) {
-        log.info("Authenticating user: {}", loginDTO.getEmail());
+        log.info("Authenticating user: {} (rememberMe: {})", loginDTO.getEmail(), loginDTO.getRememberMe());
 
         try {
             // Authenticate user
@@ -60,10 +69,23 @@ public class AuthenticationService {
             // Generate JWT access token
             String accessToken = jwtTokenProvider.generateTokenFromUserPrincipal(userPrincipal);
 
-            // Generate refresh token
-            RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getId(), request);
+            // Generate refresh token with appropriate expiration
+            RefreshToken refreshToken;
+            long expirationMs;
+            if (Boolean.TRUE.equals(loginDTO.getRememberMe())) {
+                refreshToken = refreshTokenService.createRefreshToken(user.getId(), request, rememberMeExpirationMs);
+                expirationMs = rememberMeExpirationMs;
+            } else {
+                refreshToken = refreshTokenService.createRefreshToken(user.getId(), request, refreshTokenExpirationMs);
+                expirationMs = refreshTokenExpirationMs;
+            }
 
-            log.info("User authenticated successfully: {}", loginDTO.getEmail());
+            // Update last login time
+            LocalDateTime lastLoginAt = LocalDateTime.now();
+            user.setLastLoginAt(lastLoginAt);
+            userRepository.save(user);
+
+            log.info("User authenticated successfully: {} (session: {} days)", loginDTO.getEmail(), expirationMs / (1000 * 60 * 60 * 24));
 
             UserResponseDTO userResponse = dtoMapper.toUserResponseDTO(user);
 
@@ -72,6 +94,7 @@ public class AuthenticationService {
                     .refreshToken(refreshToken.getToken())
                     .type("Bearer")
                     .user(userResponse)
+                    .lastLoginAt(lastLoginAt)
                     .build();
 
         } catch (AuthenticationException e) {
