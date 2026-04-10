@@ -12,13 +12,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserLoginDTO
-{
+public class UserLoginDTO {
     @NotBlank(message = "Email is required")
     @Email(message = "Email must be valid")
     private String email;
 
     @NotBlank(message = "Password is required")
-    @Size(min = 6 , message = "Password must be at least 6 characters")
+    @Size(min = 6, message = "Password must be at least 6 characters")
     private String password;
+
+    @Builder.Default
+    private Boolean rememberMe = false;
 }
