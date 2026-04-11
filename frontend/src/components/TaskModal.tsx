@@ -1,33 +1,67 @@
 import type { ReactElement } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import FileUpload from './FileUpload';
 import AttachmentList from './AttachmentList';
 import CommentSection from './CommentSection';
+import { attachmentApi } from '../api/attachmentApi';
+import toast from 'react-hot-toast';
 
-function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdit }) {
+function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdit, refreshTask }) {
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [createdTaskId, setCreatedTaskId] = useState(null);
+  const [attachments, setAttachments] = useState([]);
+  const [attachmentsLoading, setAttachmentsLoading] = useState(false);
 
   if (!isOpen) return null;
 
-  // Handle form submission differently for create vs edit
-  const handleSubmit = async (e) => {
+  useEffect(() => {
+    if (isEdit && task?.id) {
+      loadAttachments(task.id);
+    }
+  }, [isEdit, task?.id]);
+
+  const loadAttachments = async (taskId) => {
+    setAttachmentsLoading(true);
+    try {
+      const response = await attachmentApi.getTaskAttachments(taskId);
+      if (response.success) {
+        setAttachments(response.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load attachments:', error);
+    } finally {
+      setAttachmentsLoading(false);
+    }
+  };
+
+  const handleUploadSuccess = (newAttachment) => {
+    setAttachments((prev) => [...prev, newAttachment]);
+    toast.success('File uploaded successfully!');
+    if (refreshTask) refreshTask();
+  };
+
+  const handleDeleteSuccess = (attachmentId) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+    toast.success('Attachment deleted!');
+    if (refreshTask) refreshTask();
+  };
+
+  const handleSubmitWrapper = async (e) => {
     e.preventDefault();
 
     if (!isEdit) {
-      // CREATE MODE: Create task first, then allow file uploads
       const result = await onSubmit(e);
       if (result?.success && result?.data?.id) {
         setCreatedTaskId(result.data.id);
+        setAttachments([]);
         setShowFileUpload(true);
+        toast.success('Task created successfully!');
       }
     } else {
-      // EDIT MODE: Just update normally
       await onSubmit(e);
     }
   };
 
-  // Determine if we should show file upload section
   const shouldShowFileUpload = isEdit || createdTaskId;
   const uploadTaskId = isEdit ? task?.id : createdTaskId;
 
@@ -50,8 +84,7 @@ function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdi
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Show form fields only if task not yet created OR in edit mode */}
+        <form onSubmit={handleSubmitWrapper} className="space-y-4">
           {(!createdTaskId || isEdit) && (
             <>
               <div>
@@ -166,7 +199,6 @@ function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdi
             </>
           )}
 
-          {/* FILE UPLOAD SECTION */}
           {shouldShowFileUpload && uploadTaskId && (
             <div className="border-t-2 border-gray-200 pt-4 mt-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -178,24 +210,28 @@ function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdi
 
               <FileUpload
                 taskId={uploadTaskId}
-                onUploadSuccess={() => window.location.reload()}
+                onUploadSuccess={handleUploadSuccess}
               />
 
               <div className="mt-4">
-                <AttachmentList
-                  attachments={task?.attachments || []}
-                  onDelete={() => window.location.reload()}
-                />
+                {attachmentsLoading ? (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : (
+                  <AttachmentList
+                    attachments={attachments}
+                    onDelete={handleDeleteSuccess}
+                  />
+                )}
               </div>
             </div>
           )}
 
-          {/* COMMENT SECTION — only in edit mode */}
           {isEdit && task?.id && (
             <CommentSection taskId={task.id} />
           )}
 
-          {/* Buttons */}
           <div className="flex gap-3 pt-4">
             {!createdTaskId && (
               <button
@@ -211,6 +247,7 @@ function TaskModal({ isOpen, onClose, onSubmit, task, setTask, categories, isEdi
               onClick={() => {
                 setCreatedTaskId(null);
                 setShowFileUpload(false);
+                setAttachments([]);
                 onClose();
               }}
               className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
