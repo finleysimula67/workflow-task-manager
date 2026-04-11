@@ -15,10 +15,9 @@ spring:
       max-lifetime: 600000
 
   jpa:
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
       ddl-auto: validate
-    show-sql: false
+      show-sql: false
     properties:
       hibernate:
         format_sql: false
