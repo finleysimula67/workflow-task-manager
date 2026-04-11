@@ -18,8 +18,10 @@ export const STATUS_OPTIONS = [
 
 export const PRIORITY_OPTIONS = [
   { value: 'LOW', label: 'Low', color: '#95a5a6' },
-  { value: 'MEDIUM', label: 'Medium', color: '#f39c12' },
+  { value: 'MEDIUM', label: 'Medium', color: '#e67e22' },
   { value: 'HIGH', label: 'High', color: '#e74c3c' },
 ];
 
-export const API_BASE_URL = 'http://localhost:8080/api';
+// Uses VITE_API_BASE_URL build arg when deployed to Render
+// Falls back to localhost for local development
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
