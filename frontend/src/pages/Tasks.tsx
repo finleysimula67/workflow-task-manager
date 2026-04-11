@@ -184,8 +184,25 @@ function Tasks() {
     setCurrentPage(1);
   };
 
-  const handleFileUploadSuccess = () => loadTasks();
-  const handleAttachmentDelete = () => loadTasks();
+  const handleFileUploadSuccess = (newAttachment?: any) => {
+    if (selectedTask && newAttachment) {
+      setSelectedTask({
+        ...selectedTask,
+        attachments: [...(selectedTask.attachments || []), newAttachment]
+      });
+    }
+    toast.success('File uploaded successfully!');
+  };
+  
+  const handleAttachmentDelete = (attachmentId: number) => {
+    if (selectedTask) {
+      setSelectedTask({
+        ...selectedTask,
+        attachments: (selectedTask.attachments || []).filter((a: any) => a.id !== attachmentId)
+      });
+    }
+    toast.success('Attachment deleted!');
+  };
 
   const getPriorityColor = (priority: string) => {
     const colors: Record<string, string> = {
