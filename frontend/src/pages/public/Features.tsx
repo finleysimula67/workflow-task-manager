@@ -1,197 +1,132 @@
-import type { ReactElement } from 'react';
-import { Link } from 'react-router-dom';
-import PublicNavbar from '../../components/PublicNavbar';
-import PublicFooter from '../../components/PublicFooter';
+import { motion } from "framer-motion"
+import PublicNavbar from "../../components/PublicNavbar"
+import PublicFooter from "../../components/PublicFooter"
+import {
+  CheckSquare, BarChart3, Users, Zap, Clock, Shield, Filter,
+  Download, Bell, Calendar, FolderOpen, Tag, RefreshCw, Search,
+  ArrowRight, Layers, Palette, Globe, Smartphone
+} from "lucide-react"
+import { Link } from "react-router-dom"
+
+const categories = [
+  {
+    title: "Core Features",
+    features: [
+      { icon: CheckSquare, name: "Task Management", desc: "Create, organize, and track tasks with ease. Drag-and-drop interface for quick reordering." },
+      { icon: FolderOpen, name: "Categories", desc: "Organize tasks into custom categories with color coding for visual clarity." },
+      { icon: Tag, name: "Labels & Priorities", desc: "Tag tasks with priority levels and custom labels for better filtering." },
+      { icon: Calendar, name: "Due Dates", desc: "Set deadlines, view calendar, and never miss a due date." },
+    ],
+  },
+  {
+    title: "Productivity",
+    features: [
+      { icon: BarChart3, name: "Analytics & Stats", desc: "Track completion rates, productivity trends, and team performance." },
+      { icon: RefreshCw, name: "Streak Tracking", desc: "Build momentum with daily streak tracking and weekly goals." },
+      { icon: Bell, name: "Smart Reminders", desc: "Get notified about upcoming deadlines and overdue tasks." },
+      { icon: Search, name: "Full-Text Search", desc: "Find any task instantly with powerful search across your workspace." },
+    ],
+  },
+  {
+    title: "Collaboration",
+    features: [
+      { icon: Users, name: "Team Workspaces", desc: "Invite team members, assign tasks, and collaborate in real-time." },
+      { icon: Filter, name: "Advanced Filtering", desc: "Filter tasks by status, priority, category, and more." },
+      { icon: Download, name: "Export Options", desc: "Export your tasks to CSV or PDF for reporting and sharing." },
+      { icon: Globe, name: "Cross-Platform", desc: "Access your tasks from any device with our responsive web app." },
+    ],
+  },
+  {
+    title: "Advanced",
+    features: [
+      { icon: Shield, name: "Role-Based Access", desc: "Admin and user roles with granular permission control." },
+      { icon: Layers, name: "Task Templates", desc: "Save time with reusable task templates for common workflows." },
+      { icon: Palette, name: "Customizable UI", desc: "Dark theme optimized for long working sessions." },
+      { icon: Smartphone, name: "Mobile Optimized", desc: "Full-featured mobile experience with touch-friendly interface." },
+    ],
+  },
+]
 
 function Features() {
   return (
-      <div className="min-h-screen bg-[#030712] text-white">
-        {/* Navigation */}
-        <PublicNavbar />
-
-        {/* Hero Section */}
-        <section className="relative py-24 px-4 overflow-hidden">
-          {/* Background Glow Accents */}
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-[120px]" />
-
-          <div className="max-w-4xl mx-auto text-center relative z-10">
-            <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-b from-white to-slate-400 bg-clip-text text-transparent">
-              Powerful Features
+    <div className="min-h-screen bg-black">
+      <PublicNavbar />
+      <main className="pt-24 pb-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-20"
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary-500/10 border border-primary-500/20 mb-6">
+              <Zap size={12} className="text-primary-400" />
+              <span className="text-xs text-primary-300 font-medium">Everything you need</span>
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4">
+              Powerful features for{" "}
+              <span className="text-gradient">productive teams</span>
             </h1>
-            <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto">
-              Everything you need to manage tasks efficiently without the clutter.
+            <p className="text-slate-400 max-w-xl mx-auto">
+              From task management to team collaboration, WorkFlow has everything you need to stay organized.
             </p>
-          </div>
-        </section>
+          </motion.div>
 
-        {/* Detailed Features */}
-        <section className="py-20 px-4 relative">
-          <div className="max-w-7xl mx-auto space-y-32">
-
-            {/* Feature 1 - Task Management */}
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div className="relative z-10">
-                <div className="inline-block px-4 py-1.5 bg-blue-500/10 border border-blue-500/20 text-[#89CFF0] rounded-full text-sm font-bold mb-6">
-                  Core Engine
-                </div>
-                <h2 className="text-4xl font-bold mb-6 text-white">Task Management</h2>
-                <p className="text-slate-400 mb-8 text-lg leading-relaxed">
-                  Create, edit, and organize your tasks with ease. Set priorities, due dates,
-                  and track progress all in one place with a professional interface.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-blue-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-[#89CFF0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
+          {categories.map((category, ci) => (
+            <div key={category.title} className="mb-16 last:mb-0">
+              <motion.h2
+                initial={{ opacity: 0, y: 10 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                className="text-xl font-bold text-white mb-8 flex items-center gap-3"
+              >
+                <span className="w-8 h-8 rounded-lg bg-primary-500/10 border border-primary-500/20 flex items-center justify-center text-primary-400 text-sm font-bold">
+                  {ci + 1}
+                </span>
+                {category.title}
+              </motion.h2>
+              <div className="grid sm:grid-cols-2 gap-px bg-white/[0.04] rounded-2xl overflow-hidden">
+                {category.features.map((feature, fi) => (
+                  <motion.div
+                    key={feature.name}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: fi * 0.05 }}
+                    className="bg-black p-6 lg:p-8 group hover:bg-white/[0.02] transition-all"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary-500/10 border border-primary-500/20 flex items-center justify-center shrink-0 group-hover:bg-primary-500/20 transition-all">
+                        <feature.icon size={20} className="text-primary-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-semibold text-white mb-1.5">{feature.name}</h3>
+                        <p className="text-sm text-slate-500 leading-relaxed">{feature.desc}</p>
+                      </div>
                     </div>
-                    <span>Quick task creation with keyboard shortcuts</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-blue-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-[#89CFF0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Priority levels (Low, Medium, High)</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-blue-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-[#89CFF0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Status tracking (Todo, In Progress, Done)</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-blue-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-[#89CFF0]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Due date reminders and notifications</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-0 bg-blue-500/20 blur-[80px] rounded-full transition group-hover:bg-blue-500/30" />
-                <div className="relative bg-slate-900/50 border border-slate-800 h-80 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-2xl">
-                  <span className="text-slate-500 font-mono text-sm tracking-widest uppercase">Task Interface Preview</span>
-                </div>
+                  </motion.div>
+                ))}
               </div>
             </div>
+          ))}
 
-            {/* Feature 2 - Categories */}
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div className="order-2 md:order-1 relative group">
-                <div className="absolute inset-0 bg-purple-500/20 blur-[80px] rounded-full transition group-hover:bg-purple-500/30" />
-                <div className="relative bg-slate-900/50 border border-slate-800 h-80 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-2xl">
-                  <span className="text-slate-500 font-mono text-sm tracking-widest uppercase">Organization Preview</span>
-                </div>
-              </div>
-              <div className="order-1 md:order-2">
-                <div className="inline-block px-4 py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-400 rounded-full text-sm font-bold mb-6">
-                  Organization
-                </div>
-                <h2 className="text-4xl font-bold mb-6 text-white">Smart Categories</h2>
-                <p className="text-slate-400 mb-8 text-lg leading-relaxed">
-                  Organize your tasks with custom categories. Use colors to visually
-                  distinguish between different types of work and stay focused.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-purple-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Create unlimited custom categories</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-purple-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Color-coded labels for quick identification</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-purple-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Filter and sort tasks by category</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            {/* Feature 3 - Statistics */}
-            <div className="grid md:grid-cols-2 gap-16 items-center">
-              <div>
-                <div className="inline-block px-4 py-1.5 bg-green-500/10 border border-green-500/20 text-green-400 rounded-full text-sm font-bold mb-6">
-                  Insights
-                </div>
-                <h2 className="text-4xl font-bold mb-6 text-white">Insightful Statistics</h2>
-                <p className="text-slate-400 mb-8 text-lg leading-relaxed">
-                  Track your productivity with detailed statistics. See what you've
-                  accomplished and identify areas for improvement.
-                </p>
-                <ul className="space-y-4">
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-green-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Task completion rates over time</span>
-                  </li>
-                  <li className="flex items-center text-slate-300">
-                    <div className="mr-3 p-1 bg-green-500/20 rounded-full">
-                      <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <span>Visual charts and progress tracking</span>
-                  </li>
-                </ul>
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-0 bg-green-500/20 blur-[80px] rounded-full transition group-hover:bg-green-500/30" />
-                <div className="relative bg-slate-900/50 border border-slate-800 h-80 rounded-2xl flex items-center justify-center backdrop-blur-xl shadow-2xl">
-                  <span className="text-slate-500 font-mono text-sm tracking-widest uppercase">Statistics Dashboard</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Final CTA */}
-        <section className="py-24 px-4">
-          <div className="max-w-4xl mx-auto text-center bg-gradient-to-b from-slate-900 to-[#030712] border border-slate-800 p-16 rounded-[2rem] relative overflow-hidden shadow-2xl">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[100px]" />
-            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 relative z-10">
-              Ready to Try These Features?
-            </h2>
-            <p className="text-xl text-slate-400 mb-10 relative z-10">
-              Get started with WorkFlow today and boost your productivity.
-            </p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mt-20"
+          >
             <Link
-                to="/register"
-                className="inline-block px-10 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-bold shadow-[0_0_30px_rgba(79,70,229,0.4)] hover:scale-105 transition-all relative z-10"
+              to="/register"
+              className="inline-flex items-center gap-2 px-8 py-4 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 active:scale-[0.98]"
             >
-              Get Started Free
+              Start building <ArrowRight size={18} />
             </Link>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <PublicFooter />
-      </div>
-  );
+          </motion.div>
+        </div>
+      </main>
+      <PublicFooter />
+    </div>
+  )
 }
 
-export default Features;
+export default Features
