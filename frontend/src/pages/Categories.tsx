@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { categoryApi } from '../api/categoryApi';
 import toast from 'react-hot-toast';
 import type { Category } from '../types';
-import { Plus, FolderOpen } from 'lucide-react';
+import { Plus, FolderOpen, Edit3, Trash2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const presetColors = ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6'];
 
 function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -10,321 +13,170 @@ function Categories() {
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [newCategory, setNewCategory] = useState({ name: '', description: '', color: '#6366f1' });
 
-  const [newCategory, setNewCategory] = useState({
-    name: '',
-    description: '',
-    color: '#3B82F6'
-  });
-
-  useEffect(() => {
-    loadCategories();
-  }, []);
+  useEffect(() => { loadCategories(); }, []);
 
   const loadCategories = async () => {
-    try {
-      setLoading(true);
-      const response = await categoryApi.getAllCategories();
-
-      if (response.success) {
-        setCategories(response.data);
-      }
-    } catch {
-      toast.error('Failed to load categories');
-    } finally {
-      setLoading(false);
-    }
+    try { setLoading(true); const r = await categoryApi.getAllCategories(); if (r.success) setCategories(r.data); }
+    catch { toast.error('Failed to load categories'); }
+    finally { setLoading(false); }
   };
 
   const handleCreateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!newCategory.name.trim()) {
-      toast.error('Please enter a category name');
-      return;
-    }
-
-    try {
-      const response = await categoryApi.createCategory(newCategory);
-
-      if (response.success) {
-        toast.success('Category created successfully!');
-        setShowCreateModal(false);
-        setNewCategory({ name: '', description: '', color: '#3B82F6' });
-        loadCategories();
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to create category');
-    }
+    if (!newCategory.name.trim()) { toast.error('Please enter a category name'); return; }
+    try { const r = await categoryApi.createCategory(newCategory); if (r.success) { toast.success('Category created!'); setShowCreateModal(false); setNewCategory({ name: '', description: '', color: '#6366f1' }); loadCategories(); } }
+    catch (err: any) { toast.error(err.response?.data?.message || 'Failed to create category'); }
   };
 
-  const handleEditCategory = (category: Category) => {
-    setSelectedCategory(category);
-    setShowEditModal(true);
-  };
+  const handleEditCategory = (category: Category) => { setSelectedCategory({ ...category }); setShowEditModal(true); };
 
   const handleUpdateCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    try {
-      const response = await categoryApi.updateCategory(selectedCategory!.id, {
-        name: selectedCategory!.name,
-        description: selectedCategory!.description,
-        color: selectedCategory!.color
-      });
-
-      if (response.success) {
-        toast.success('Category updated successfully!');
-        setShowEditModal(false);
-        setSelectedCategory(null);
-        loadCategories();
-      }
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || 'Failed to update category');
-    }
+    try { const r = await categoryApi.updateCategory(selectedCategory!.id, { name: selectedCategory!.name, description: selectedCategory!.description, color: selectedCategory!.color }); if (r.success) { toast.success('Category updated!'); setShowEditModal(false); setSelectedCategory(null); loadCategories(); } }
+    catch (err: any) { toast.error(err.response?.data?.message || 'Failed to update category'); }
   };
 
   const handleDeleteCategory = async (categoryId: number) => {
-    if (!confirm('Are you sure you want to delete this category?')) {
-      return;
-    }
-
-    try {
-      const response = await categoryApi.deleteCategory(categoryId);
-
-      if (response.success) {
-        toast.success('Category deleted successfully!');
-        loadCategories();
-      }
-    } catch {
-      toast.error('Failed to delete category');
-    }
+    if (!confirm('Delete this category?')) return;
+    try { const r = await categoryApi.deleteCategory(categoryId); if (r.success) { toast.success('Category deleted!'); loadCategories(); } }
+    catch { toast.error('Failed to delete category'); }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent" />
-      </div>
-    );
-  }
+  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition";
+
+  if (loading) return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="w-10 h-10 border-2 border-white/10 border-t-primary-400 rounded-full animate-spin" />
+    </div>
+  );
 
   return (
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">Categories</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-1">Organize your tasks with categories</p>
-          </div>
-          <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-95"
-          >
-            <Plus size={18} /> New Category
+    <div className="space-y-6 animate-fadeIn">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Categories</h1>
+          <p className="text-sm text-slate-500 mt-1">Organize your tasks with categories</p>
+        </div>
+        <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20 active:scale-[0.97]">
+          <Plus size={18} /> New Category
+        </button>
+      </div>
+
+      {categories.length === 0 ? (
+        <div className="glass-panel p-16 text-center">
+          <FolderOpen className="mx-auto h-14 w-14 text-slate-600 mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">No categories yet</h3>
+          <p className="text-sm text-slate-500 mb-6">Create categories to organize your tasks!</p>
+          <button onClick={() => setShowCreateModal(true)} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition">
+            <Plus size={16} /> Create Category
           </button>
         </div>
-
-        {categories.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-12 text-center">
-              <FolderOpen className="mx-auto h-16 w-16 text-slate-400 dark:text-slate-500 mb-4" />
-              <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">No categories yet</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-6">Create categories to organize your tasks!</p>
-              <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
-              >
-                Create Category
-              </button>
-            </div>
-        ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {categories.map((category) => (
-                  <div
-                      key={category.id}
-                      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl hover:shadow-lg hover:border-blue-500/50 dark:hover:border-blue-500/50 transition-all duration-300 p-6"
-                  >
-                    <div
-                        className="h-2 rounded-full mb-4"
-                        style={{ backgroundColor: category.color }}
-                    />
-
-                    <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-                      {category.name}
-                    </h3>
-
-                    {category.description && (
-                        <p className="text-slate-500 dark:text-slate-400 text-sm mb-4 line-clamp-2">
-                          {category.description}
-                        </p>
-                    )}
-
-                    <div className="flex gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <button
-                          onClick={() => handleEditCategory(category)}
-                          className="flex-1 px-3 py-2 bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-500/30 text-sm font-medium transition"
-                      >
-                        Edit
-                      </button>
-                      <button
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="flex-1 px-3 py-2 bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-500/30 text-sm font-medium transition"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-              ))}
-            </div>
-        )}
-
-        {showCreateModal && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Create New Category</h2>
-
-                <form onSubmit={handleCreateCategory} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Name *
-                    </label>
-                    <input
-                        type="text"
-                        value={newCategory.name}
-                        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                        placeholder="e.g., Work, Personal, Urgent"
-                        required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                        value={newCategory.description}
-                        onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                        rows="3"
-                        placeholder="Optional description"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Color
-                    </label>
-                    <div className="flex gap-3">
-                      <input
-                          type="color"
-                          value={newCategory.color}
-                          onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
-                          className="h-10 w-20 rounded cursor-pointer"
-                      />
-                      <input
-                          type="text"
-                          value={newCategory.color}
-                          onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
-                          className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                          placeholder="#3B82F6"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                        type="submit"
-                        className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
-                    >
-                      Create
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setShowCreateModal(false)}
-                        className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {categories.map((category, i) => (
+            <motion.div
+              key={category.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.03 }}
+              className="glass-panel-hover p-5 group"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-4 h-4 rounded-full shrink-0" style={{ backgroundColor: category.color }} />
+                <h3 className="text-base font-semibold text-white truncate">{category.name}</h3>
               </div>
-            </div>
-        )}
-
-        {showEditModal && selectedCategory && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-w-md w-full p-6">
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Edit Category</h2>
-
-                <form onSubmit={handleUpdateCategory} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Name *
-                    </label>
-                    <input
-                        type="text"
-                        value={selectedCategory.name}
-                        onChange={(e) => setSelectedCategory({ ...selectedCategory, name: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                        required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                        value={selectedCategory.description || ''}
-                        onChange={(e) => setSelectedCategory({ ...selectedCategory, description: e.target.value })}
-                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                        rows="3"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
-                      Color
-                    </label>
-                    <div className="flex gap-3">
-                      <input
-                          type="color"
-                          value={selectedCategory.color}
-                          onChange={(e) => setSelectedCategory({ ...selectedCategory, color: e.target.value })}
-                          className="h-10 w-20 rounded cursor-pointer"
-                      />
-                      <input
-                          type="text"
-                          value={selectedCategory.color}
-                          onChange={(e) => setSelectedCategory({ ...selectedCategory, color: e.target.value })}
-                          className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <button
-                        type="submit"
-                        className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition"
-                    >
-                      Update
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => {
-                          setShowEditModal(false);
-                          setSelectedCategory(null);
-                        }}
-                        className="flex-1 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+              {category.description && (
+                <p className="text-sm text-slate-500 mb-4 line-clamp-2 leading-relaxed">{category.description}</p>
+              )}
+              <div className="flex gap-2 pt-3 border-t border-white/[0.04]">
+                <button onClick={() => handleEditCategory(category)} className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10 hover:text-white text-sm font-medium transition">
+                  <Edit3 size={14} /> Edit
+                </button>
+                <button onClick={() => handleDeleteCategory(category.id)} className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 rounded-xl bg-white/5 text-slate-400 border border-white/10 hover:bg-red-500/10 hover:text-red-400 text-sm font-medium transition">
+                  <Trash2 size={14} /> Delete
+                </button>
               </div>
-            </div>
-        )}
-      </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
+
+      {/* Create Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-black border border-white/[0.08] rounded-2xl p-6 animate-fadeInScale shadow-2xl">
+            <h2 className="text-lg font-semibold text-white mb-5">Create Category</h2>
+            <form onSubmit={handleCreateCategory} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name *</label>
+                <input type="text" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} className={inputCls} placeholder="e.g., Work, Personal, Urgent" required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
+                <textarea value={newCategory.description} onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })} className={inputCls} rows={3} placeholder="Optional description" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Color</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {presetColors.map((color) => (
+                    <button key={color} type="button" onClick={() => setNewCategory(prev => ({ ...prev, color }))}
+                      className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                      style={{ backgroundColor: color, borderColor: newCategory.color === color ? '#fff' : 'transparent', borderWidth: '2px', boxShadow: newCategory.color === color ? '0 0 0 2px rgba(255,255,255,0.3)' : 'none' }} />
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <input type="color" value={newCategory.color} onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })} className="h-10 w-16 rounded cursor-pointer bg-transparent border-0" />
+                  <input type="text" value={newCategory.color} onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })} className={inputCls} />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 transition text-sm">Create</button>
+                <button type="button" onClick={() => setShowCreateModal(false)} className="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 font-medium hover:bg-white/10 transition text-sm">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && selectedCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md bg-black border border-white/[0.08] rounded-2xl p-6 animate-fadeInScale shadow-2xl">
+            <h2 className="text-lg font-semibold text-white mb-5">Edit Category</h2>
+            <form onSubmit={handleUpdateCategory} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Name *</label>
+                <input type="text" value={selectedCategory.name} onChange={(e) => setSelectedCategory({ ...selectedCategory, name: e.target.value })} className={inputCls} required />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Description</label>
+                <textarea value={selectedCategory.description || ''} onChange={(e) => setSelectedCategory({ ...selectedCategory, description: e.target.value })} className={inputCls} rows={3} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-1.5">Color</label>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {presetColors.map((color) => (
+                    <button key={color} type="button" onClick={() => setSelectedCategory(prev => ({ ...prev!, color }))}
+                      className="w-8 h-8 rounded-full transition-all hover:scale-110"
+                      style={{ backgroundColor: color, borderColor: selectedCategory.color === color ? '#fff' : 'transparent', borderWidth: '2px', boxShadow: selectedCategory.color === color ? '0 0 0 2px rgba(255,255,255,0.3)' : 'none' }} />
+                  ))}
+                </div>
+                <div className="flex gap-3">
+                  <input type="color" value={selectedCategory.color} onChange={(e) => setSelectedCategory({ ...selectedCategory, color: e.target.value })} className="h-10 w-16 rounded cursor-pointer bg-transparent border-0" />
+                  <input type="text" value={selectedCategory.color} onChange={(e) => setSelectedCategory({ ...selectedCategory, color: e.target.value })} className={inputCls} />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button type="submit" className="flex-1 py-2.5 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 transition text-sm">Update</button>
+                <button type="button" onClick={() => { setShowEditModal(false); setSelectedCategory(null); }} className="flex-1 py-2.5 rounded-xl bg-white/5 text-slate-300 font-medium hover:bg-white/10 transition text-sm">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
