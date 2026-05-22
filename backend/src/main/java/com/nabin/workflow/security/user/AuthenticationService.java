@@ -10,6 +10,7 @@ import com.nabin.workflow.mapper.DTOMapper;
 import com.nabin.workflow.repository.UserRepository;
 import com.nabin.workflow.security.jwt.JwtTokenProvider;
 import com.nabin.workflow.services.RefreshTokenService;
+import com.nabin.workflow.services.interfaces.ActivityLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class AuthenticationService {
     private final UserRepository userRepository;
     private final DTOMapper dtoMapper;
     private final RefreshTokenService refreshTokenService;
+    private final ActivityLogService activityLogService;
 
     @Value("${jwt.refresh-expiration}")
     private Long refreshTokenExpirationMs;
@@ -86,6 +88,9 @@ public class AuthenticationService {
             userRepository.save(user);
 
             log.info("User authenticated successfully: {} (session: {} days)", loginDTO.getEmail(), expirationMs / (1000 * 60 * 60 * 24));
+
+            activityLogService.logActivity(user.getId(), null, "User", user.getId(),
+                    "LOGIN", "User logged in", "IP: " + request.getRemoteAddr());
 
             UserResponseDTO userResponse = dtoMapper.toUserResponseDTO(user);
 
