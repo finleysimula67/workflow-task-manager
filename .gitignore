@@ -24,7 +24,6 @@ mvnw.cmd
 # Application properties with secrets
 **/application-local.properties
 **/application-dev.properties
-**/application-prod.properties
 
 # Logs
 *.log

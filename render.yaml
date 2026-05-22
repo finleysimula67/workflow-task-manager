@@ -1,0 +1,44 @@
+version: "1"
+services:
+  # 1. The Backend (Spring Boot)
+  - type: web
+    name: workflow-backend
+    runtime: docker
+    repo: https://github.com/nabinoli99/workflow
+    plan: free
+    rootDir: backend
+    dockerContext: .
+    dockerfilePath: ./Dockerfile  # Fixed path relative to 'backend' folder
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        sync: false
+      - key: DATABASE_USERNAME
+        sync: false
+      - key: DATABASE_PASSWORD
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: FRONTEND_URL
+        sync: false
+
+  # 2. The Frontend (TypeScript)
+  - type: web
+    name: workflow-frontend
+    runtime: static
+    repo: https://github.com/nabinoli99/workflow
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        sync: false
