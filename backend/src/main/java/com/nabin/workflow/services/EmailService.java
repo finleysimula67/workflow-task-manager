@@ -288,6 +288,54 @@ public class EmailService {
     }
 
     /**
+     * Send team invitation email
+     */
+    @Async
+    public void sendTeamInvitationEmail(String to, String invitedByUsername, String teamName) {
+        try {
+            log.info("Sending team invitation email to: {}", to);
+
+            String inviteLink = frontendUrl + "/login";
+            String subject = "You've been invited to " + teamName + " - WorkFlow";
+            String htmlContent = buildTeamInvitationHtml(invitedByUsername, teamName, inviteLink);
+
+            sendHtmlEmail(to, subject, htmlContent);
+
+            log.info("Team invitation email sent successfully to: {}", to);
+
+        } catch (Exception e) {
+            log.error("Failed to send team invitation email to {}: {}", to, e.getMessage(), e);
+        }
+    }
+
+    private String buildTeamInvitationHtml(String invitedBy, String teamName, String inviteLink) {
+        return "<!DOCTYPE html>" +
+                "<html lang=\"en\">" +
+                "<head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Team Invitation</title></head>" +
+                "<body style=\"margin:0;padding:0;font-family:Arial,sans-serif;background-color:#f4f4f4;\">" +
+                "<table role=\"presentation\" style=\"width:100%;border-collapse:collapse;\">" +
+                "<tr><td align=\"center\" style=\"padding:40px 0;\">" +
+                "<table role=\"presentation\" style=\"width:600px;border-collapse:collapse;background-color:#ffffff;box-shadow:0 4px 6px rgba(0,0,0,0.1);\">" +
+                "<tr><td style=\"background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:40px;text-align:center;\">" +
+                "<h1 style=\"color:#ffffff;margin:0;font-size:28px;\">Team Invitation</h1>" +
+                "<p style=\"color:#ffffff;margin:10px 0 0 0;font-size:16px;\">You've been invited to join a team</p>" +
+                "</td></tr>" +
+                "<tr><td style=\"padding:40px 30px;background-color:#f9f9f9;\">" +
+                "<p style=\"color:#555555;line-height:1.6;margin:0 0 20px 0;font-size:16px;\">Hello,</p>" +
+                "<p style=\"color:#555555;line-height:1.6;margin:0 0 20px 0;font-size:16px;\"><strong>" + invitedBy + "</strong> has invited you to join the team <strong>" + teamName + "</strong> on WorkFlow.</p>" +
+                "<table role=\"presentation\" style=\"width:100%;border-collapse:collapse;\">" +
+                "<tr><td align=\"center\" style=\"padding:20px 0;\">" +
+                "<a href=\"" + inviteLink + "\" style=\"display:inline-block;padding:16px 40px;background-color:#667eea;color:#ffffff;text-decoration:none;border-radius:5px;font-weight:bold;font-size:16px;\">View Team</a>" +
+                "</td></tr></table>" +
+                "<p style=\"color:#555555;line-height:1.6;margin:20px 0 0 0;font-size:14px;\">If you don't have an account yet, please sign up first to access the team.</p>" +
+                "<p style=\"color:#555555;line-height:1.6;margin:30px 0 0 0;font-size:16px;\">Best regards,<br><strong>The WorkFlow Team</strong></p>" +
+                "</td></tr>" +
+                "<tr><td style=\"background-color:#333333;padding:20px;text-align:center;\">" +
+                "<p style=\"color:#ffffff;margin:0;font-size:12px;\">&copy; 2026 WorkFlow. All rights reserved.</p>" +
+                "</td></tr></table></td></tr></table></body></html>";
+    }
+
+    /**
      * Build welcome email HTML
      */
     private String buildWelcomeEmailHtml(String username) {
