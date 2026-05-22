@@ -52,46 +52,27 @@ export default function EmptyState({ type, onAction, searchQuery }: EmptyStatePr
 
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-6">
-        <Icon className="w-10 h-10 text-slate-400 dark:text-slate-500" />
+      <div className="w-20 h-20 rounded-full bg-white/5 border border-white/[0.06] flex items-center justify-center mb-6">
+        <Icon className="w-10 h-10 text-slate-500" />
       </div>
-      
-      <h3 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-        {title}
-      </h3>
-      
-      <p className="text-slate-500 dark:text-slate-400 max-w-sm mb-6">
-        {searchQuery 
-          ? `No tasks found for "${searchQuery}"`
-          : description
-        }
+      <h3 className="text-xl font-semibold text-white mb-2">{title}</h3>
+      <p className="text-slate-400 max-w-sm mb-6">
+        {searchQuery ? `No tasks found for "${searchQuery}"` : description}
       </p>
-      
       {action && (
         <div className="flex gap-3">
           {link && !onAction && (
-            <Link
-              to={link}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/30 hover:scale-105"
-            >
-              <Plus size={20} />
-              {action}
+            <Link to={link} className="glass-button-primary">
+              <Plus size={20} /> {action}
             </Link>
           )}
           {onAction && (
-            <button
-              onClick={onAction}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all duration-200 shadow-lg shadow-blue-500/30 hover:scale-105"
-            >
-              <Plus size={20} />
-              {action}
+            <button onClick={onAction} className="glass-button-primary">
+              <Plus size={20} /> {action}
             </button>
           )}
           {link && onAction && (
-            <Link
-              to={link}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-medium rounded-xl transition-all duration-200"
-            >
+            <Link to={link} className="glass-button-secondary">
               View All
             </Link>
           )}
