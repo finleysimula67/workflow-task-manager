@@ -1,6 +1,7 @@
 package com.nabin.workflow.controller;
 
 import com.nabin.workflow.dto.common.ApiResponse;
+import com.nabin.workflow.dto.request.AdminUserUpdateDTO;
 import com.nabin.workflow.dto.response.UserResponseDTO;
 import com.nabin.workflow.entities.TaskStatus;
 import com.nabin.workflow.repository.TaskRepository;
@@ -86,6 +87,21 @@ public class AdminController {
 
         ApiResponse<Void> response = ApiResponse.success(
                 "User deleted successfully"
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/users/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<?>> updateUser(@PathVariable Long id, @RequestBody AdminUserUpdateDTO updateDTO) {
+        log.info("Admin endpoint: Updating user with ID: {}", id);
+
+        var updatedUser = userService.updateUserByAdmin(id, updateDTO);
+
+        ApiResponse<?> response = ApiResponse.success(
+                "User updated successfully",
+                updatedUser
         );
 
         return ResponseEntity.ok(response);
