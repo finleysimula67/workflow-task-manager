@@ -5,6 +5,7 @@ import com.nabin.workflow.dto.request.TaskFilterDTO;
 import com.nabin.workflow.dto.request.TaskUpdateDTO;
 import com.nabin.workflow.dto.response.TaskResponseDTO;
 import com.nabin.workflow.dto.response.TaskStatsDTO;
+import com.nabin.workflow.dto.response.ProductivityDTO;
 import com.nabin.workflow.entities.*;
 import com.nabin.workflow.exception.InvalidBusinessRuleException;
 import com.nabin.workflow.exception.ResourceNotFoundException;
@@ -12,6 +13,7 @@ import com.nabin.workflow.mapper.DTOMapper;
 import com.nabin.workflow.repository.CategoryRepository;
 import com.nabin.workflow.repository.TaskRepository;
 import com.nabin.workflow.repository.UserRepository;
+import com.nabin.workflow.services.interfaces.ActivityLogService;
 import com.nabin.workflow.services.interfaces.TaskService;
 import com.nabin.workflow.specification.TaskSpecification;
 import com.nabin.workflow.util.SecurityUtil;
@@ -44,6 +46,7 @@ public class TaskServiceImpl implements TaskService {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final DTOMapper dtoMapper;
+    private final ActivityLogService activityLogService;
 
     // =========================================================
     // CREATE
@@ -85,6 +88,10 @@ public class TaskServiceImpl implements TaskService {
         Task savedTask = taskRepository.save(task);
         log.info("✅ Task created - ID: {}, Title: {}, Categories: {}",
                 savedTask.getId(), savedTask.getTitle(), savedTask.getCategories().size());
+
+        activityLogService.logActivity(userId, savedTask.getId(), "Task", savedTask.getId(),
+                "CREATED", "Created task: " + savedTask.getTitle(),
+                "Task created with priority " + savedTask.getPriority());
 
         return dtoMapper.toTaskResponseDTO(savedTask);
     }
@@ -176,6 +183,10 @@ public class TaskServiceImpl implements TaskService {
         Task updatedTask = taskRepository.save(task);
         log.info("✅ Task updated - ID: {}", taskId);
 
+        activityLogService.logActivity(userId, taskId, "Task", taskId,
+                "UPDATED", "Updated task: " + task.getTitle(),
+                "Task details were modified");
+
         return dtoMapper.toTaskResponseDTO(updatedTask);
     }
 
@@ -187,10 +198,16 @@ public class TaskServiceImpl implements TaskService {
         Task task = taskRepository.findByIdAndUserId(taskId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
 
+        TaskStatus oldStatus = task.getStatus();
         updateTaskStatusInternal(task, newStatus);
 
         Task updatedTask = taskRepository.save(task);
         log.info("Task status updated: {} → {} by user: {}", taskId, newStatus, userId);
+
+        activityLogService.logActivity(userId, taskId, "Task", taskId,
+                "STATUS_CHANGED", "Changed status to " + newStatus,
+                "Status updated from " + oldStatus + " to " + newStatus);
+
         return dtoMapper.toTaskResponseDTO(updatedTask);
     }
 
@@ -204,8 +221,13 @@ public class TaskServiceImpl implements TaskService {
         Long userId = SecurityUtil.getCurrentUserId();
         Task task = taskRepository.findByIdAndUserId(taskId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Task", "id", taskId));
+        String taskTitle = task.getTitle();
         taskRepository.delete(task);
         log.info("Task deleted: {} by user: {}", taskId, userId);
+
+        activityLogService.logActivity(userId, taskId, "Task", taskId,
+                "DELETED", "Deleted task: " + taskTitle,
+                "Task was permanently deleted");
     }
 
     // =========================================================
@@ -302,6 +324,31 @@ public class TaskServiceImpl implements TaskService {
                 Specification.where(TaskSpecification.hasUserId(userId))
                         .and(TaskSpecification.isOverdue())
         );
+    }
+
+    // =========================================================
+    // FULL-TEXT SEARCH
+    // =========================================================
+
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("isAuthenticated()")
+    public List<TaskResponseDTO> searchTasksFullText(String query) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        Page<Task> results = taskRepository.fullTextSearch(userId, query,
+                PageRequest.of(0, 50));
+        return results.stream()
+                .map(dtoMapper::toTaskResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @PreAuthorize("isAuthenticated()")
+    public Page<TaskResponseDTO> searchTasksFullTextPaged(String query, Pageable pageable) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        return taskRepository.fullTextSearch(userId, query, pageable)
+                .map(dtoMapper::toTaskResponseDTO);
     }
 
     // =========================================================
@@ -426,5 +473,80 @@ public class TaskServiceImpl implements TaskService {
 
         log.info("Task stats retrieved for user: {}", userId);
         return stats;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductivityDTO getProductivity() {
+        Long userId = SecurityUtil.getCurrentUserId();
+        LocalDate today = LocalDate.now();
+        int weeklyGoal = 10;
+
+        long tasksCompletedToday = taskRepository.countCompletedBetween(userId, today.atStartOfDay(), today.plusDays(1).atStartOfDay());
+
+        long completedThisWeek = 0;
+        int currentStreak = 0;
+        int longestStreak = 0;
+        int streak = 0;
+
+        for (int i = 0; i < 365; i++) {
+            LocalDate day = today.minusDays(i);
+            long count = taskRepository.countCompletedBetween(userId, day.atStartOfDay(), day.plusDays(1).atStartOfDay());
+
+            if (i < 7) completedThisWeek += count;
+
+            if (count > 0) {
+                streak++;
+                if (i == 0) currentStreak = streak;
+            } else {
+                if (i == 0) currentStreak = 0;
+                longestStreak = Math.max(longestStreak, streak);
+                streak = 0;
+            }
+        }
+        longestStreak = Math.max(longestStreak, streak);
+
+        List<ProductivityDTO.ChartDataPoint> weeklyChart = new java.util.ArrayList<>();
+        for (int i = 6; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            long count = taskRepository.countCompletedBetween(userId, day.atStartOfDay(), day.plusDays(1).atStartOfDay());
+            weeklyChart.add(ProductivityDTO.ChartDataPoint.builder()
+                    .label(day.getDayOfWeek().name().substring(0, 3))
+                    .value(count)
+                    .build());
+        }
+
+        List<ProductivityDTO.ChartDataPoint> monthlyChart = new java.util.ArrayList<>();
+        for (int i = 29; i >= 0; i--) {
+            LocalDate day = today.minusDays(i);
+            long count = taskRepository.countCompletedBetween(userId, day.atStartOfDay(), day.plusDays(1).atStartOfDay());
+            monthlyChart.add(ProductivityDTO.ChartDataPoint.builder()
+                    .label(day.getDayOfMonth() + "/" + (day.getMonthValue()))
+                    .value(count)
+                    .build());
+        }
+
+        return ProductivityDTO.builder()
+                .currentStreak(currentStreak)
+                .longestStreak(longestStreak)
+                .tasksCompletedToday(tasksCompletedToday)
+                .weeklyGoal(weeklyGoal)
+                .weeklyProgress((int) completedThisWeek)
+                .weeklyChart(weeklyChart)
+                .monthlyChart(monthlyChart)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void reorderTasks(List<com.nabin.workflow.dto.request.ReorderDTO.OrderEntry> order) {
+        Long userId = SecurityUtil.getCurrentUserId();
+        for (var entry : order) {
+            taskRepository.findByIdAndUserId(entry.getId(), userId).ifPresent(task -> {
+                task.setPosition(entry.getPosition());
+                taskRepository.save(task);
+            });
+        }
+        log.info("Tasks reordered for user: {}", userId);
     }
 }
