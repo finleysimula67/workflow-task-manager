@@ -77,7 +77,7 @@ export default function TaskStreaks({
             className={`h-full rounded-full transition-all duration-500 ${
               isGoalReached
                 ? 'bg-gradient-to-r from-green-400 to-emerald-500'
-                : 'bg-gradient-to-r from-blue-500 to-purple-500'
+                : 'bg-white/20'
             }`}
             style={{ width: `${progressPercentage}%` }}
           />
@@ -100,7 +100,7 @@ export default function TaskStreaks({
             <div key={index} className="flex flex-col items-center gap-1">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
                 isToday
-                  ? 'bg-blue-500 text-white ring-2 ring-blue-300 dark:ring-blue-600'
+                  ? 'bg-white/20 text-white ring-2 ring-white/30'
                   : isCompleted
                     ? 'bg-green-500 text-white'
                     : isDark
