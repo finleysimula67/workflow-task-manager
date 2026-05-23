@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Plus, X, Calendar, Flag, FolderOpen } from 'lucide-react';
-import { useTheme } from '../../context/ThemeContext';
 
 interface QuickAddTaskProps {
   onAdd: (title: string, data?: { dueDate?: string; priority?: string; categoryIds?: number[] }) => void;
@@ -14,8 +13,6 @@ export default function QuickAddTask({ onAdd, categories = [] }: QuickAddTaskPro
   const [dueDate, setDueDate] = useState('');
   const [priority, setPriority] = useState<'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'>('MEDIUM');
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +42,7 @@ export default function QuickAddTask({ onAdd, categories = [] }: QuickAddTaskPro
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-full shadow-xl shadow-blue-500/40 flex items-center justify-center transition-all duration-300 hover:scale-110 z-40 active:scale-95"
+        className="fixed bottom-24 right-6 md:bottom-8 md:right-8 w-14 h-14 md:w-16 md:h-16 bg-primary-500 text-white rounded-full shadow-xl border border-primary-400/30 flex items-center justify-center transition-all duration-300 hover:scale-110 z-40 active:scale-95"
         title="Quick Add Task (Ctrl+N)"
       >
         <Plus size={24} className="md:w-7 md:h-7" />
@@ -54,83 +51,41 @@ export default function QuickAddTask({ onAdd, categories = [] }: QuickAddTaskPro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <form
-        onSubmit={handleSubmit}
-        className={`w-full max-w-lg ${isDark ? 'bg-slate-800' : 'bg-white'} rounded-2xl shadow-2xl overflow-hidden`}
-      >
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
-          <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Quick Add Task
-          </h3>
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className={`p-2 rounded-lg ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-100'} transition`}
-          >
-            <X size={20} className={isDark ? 'text-slate-400' : 'text-slate-500'} />
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/80">
+      <form onSubmit={handleSubmit} className="w-full max-w-lg bg-black border border-white/[0.08] overflow-hidden">
+        <div className="p-4 border-b border-white/[0.06] flex items-center justify-between">
+          <h3 className="font-semibold text-white">Quick Add Task</h3>
+          <button type="button" onClick={() => setIsOpen(false)} className="p-2 rounded-lg hover:bg-white/5 transition">
+            <X size={20} className="text-slate-400" />
           </button>
         </div>
 
         <div className="p-4 space-y-4">
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="What needs to be done?"
-            autoFocus
-            className={`w-full px-4 py-3 rounded-xl border ${
-              isDark
-                ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-400'
-                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
-            } focus:ring-2 focus:ring-blue-500 outline-none transition`}
-          />
+          <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
+            placeholder="What needs to be done?" autoFocus
+            className="w-full px-4 py-3 bg-white/5 border border-white/[0.06] text-white placeholder-slate-500 focus:outline-none focus:border-white/[0.08] transition" />
 
-          <button
-            type="button"
-            onClick={() => setShowOptions(!showOptions)}
-            className={`flex items-center gap-2 text-sm ${
-              isDark ? 'text-slate-400' : 'text-slate-500'
-            } hover:text-blue-500 transition`}
-          >
-            <Plus size={16} />
-            Add Options
+          <button type="button" onClick={() => setShowOptions(!showOptions)}
+            className="flex items-center gap-2 text-sm text-primary-400 hover:text-primary-300 transition">
+            <Plus size={16} /> Add Options
           </button>
 
           {showOptions && (
-            <div className="space-y-4 pt-2 border-t border-slate-200 dark:border-slate-700">
+            <div className="space-y-4 pt-2 border-t border-white/[0.06]">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={`flex items-center gap-2 text-sm mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <Calendar size={16} />
-                    Due Date
+                  <label className="flex items-center gap-2 text-sm mb-2 text-slate-300">
+                    <Calendar size={16} /> Due Date
                   </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      isDark
-                        ? 'bg-slate-700 border-slate-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-900'
-                    } focus:ring-2 focus:ring-blue-500 outline-none`}
-                  />
+                  <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/[0.06] text-white focus:outline-none focus:border-white/[0.08] transition" />
                 </div>
-
                 <div>
-                  <label className={`flex items-center gap-2 text-sm mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <Flag size={16} />
-                    Priority
+                  <label className="flex items-center gap-2 text-sm mb-2 text-slate-300">
+                    <Flag size={16} /> Priority
                   </label>
-                  <select
-                    value={priority}
-                    onChange={(e) => setPriority(e.target.value as typeof priority)}
-                    className={`w-full px-3 py-2 rounded-lg border ${
-                      isDark
-                        ? 'bg-slate-700 border-slate-600 text-white'
-                        : 'bg-white border-slate-200 text-slate-900'
-                    } focus:ring-2 focus:ring-blue-500 outline-none`}
-                  >
+                  <select value={priority} onChange={(e) => setPriority(e.target.value as typeof priority)}
+                    className="w-full px-3 py-2 bg-white/5 border border-white/[0.06] text-white focus:outline-none focus:border-white/[0.08] transition">
                     <option value="LOW">Low</option>
                     <option value="MEDIUM">Medium</option>
                     <option value="HIGH">High</option>
@@ -141,23 +96,18 @@ export default function QuickAddTask({ onAdd, categories = [] }: QuickAddTaskPro
 
               {categories.length > 0 && (
                 <div>
-                  <label className={`flex items-center gap-2 text-sm mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    <FolderOpen size={16} />
-                    Categories
+                  <label className="flex items-center gap-2 text-sm mb-2 text-slate-300">
+                    <FolderOpen size={16} /> Categories
                   </label>
                   <div className="flex flex-wrap gap-2">
                     {categories.map((cat) => (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => toggleCategory(cat.id)}
-                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                      <button key={cat.id} type="button" onClick={() => toggleCategory(cat.id)}
+                        className={`px-3 py-1.5 rounded-lg text-sm font-medium transition border ${
                           selectedCategories.includes(cat.id)
-                            ? 'ring-2 ring-blue-500'
-                            : ''
+                            ? 'text-white border-transparent'
+                            : 'bg-white/5 text-slate-300 border-white/[0.06] hover:bg-white/10'
                         }`}
-                        style={{ backgroundColor: cat.color + '20', color: cat.color }}
-                      >
+                        style={{ backgroundColor: selectedCategories.includes(cat.id) ? cat.color : undefined }}>
                         {cat.name}
                       </button>
                     ))}
@@ -168,23 +118,13 @@ export default function QuickAddTask({ onAdd, categories = [] }: QuickAddTaskPro
           )}
         </div>
 
-        <div className="p-4 bg-slate-50 dark:bg-slate-900 flex gap-3">
-          <button
-            type="button"
-            onClick={() => setIsOpen(false)}
-            className={`flex-1 py-3 rounded-xl font-medium ${
-              isDark
-                ? 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                : 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-            } transition`}
-          >
+        <div className="p-4 bg-black border-t border-white/[0.06] flex gap-3">
+          <button type="button" onClick={() => setIsOpen(false)}
+            className="flex-1 py-3 bg-white/5 text-slate-300 font-medium hover:bg-white/10 transition">
             Cancel
           </button>
-          <button
-            type="submit"
-            disabled={!title.trim()}
-            className="flex-1 py-3 rounded-xl font-medium bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
+          <button type="submit" disabled={!title.trim()}
+            className="flex-1 py-3 bg-primary-500 text-white hover:bg-primary-600 font-medium transition disabled:opacity-50 disabled:cursor-not-allowed">
             Add Task
           </button>
         </div>
