@@ -9,6 +9,7 @@ import com.nabin.workflow.exception.ResourceNotFoundException;
 import com.nabin.workflow.mapper.DTOMapper;
 import com.nabin.workflow.repository.CategoryRepository;
 import com.nabin.workflow.repository.UserRepository;
+import com.nabin.workflow.services.interfaces.ActivityLogService;
 import com.nabin.workflow.services.interfaces.CategoryService;
 import com.nabin.workflow.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,7 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryRepository categoryRepository;
     private final UserRepository userRepository;
     private final DTOMapper dtoMapper;
+    private final ActivityLogService activityLogService;
 
     @Override
     @Transactional
@@ -51,6 +53,10 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category savedCategory = categoryRepository.save(category);
         log.info("✅ Category created - ID: {}, Name: {}", savedCategory.getId(), savedCategory.getName());
+
+        activityLogService.logActivity(userId, null, "Category", savedCategory.getId(),
+                "CREATED", "Created category: " + savedCategory.getName(),
+                "Category color: " + savedCategory.getColor());
 
         return dtoMapper.toCategoryResponseDTO(savedCategory);
     }
@@ -101,6 +107,10 @@ public class CategoryServiceImpl implements CategoryService {
         Category updatedCategory = categoryRepository.save(category);
         log.info("✅ Category updated - ID: {}", categoryId);
 
+        activityLogService.logActivity(userId, null, "Category", categoryId,
+                "UPDATED", "Updated category: " + category.getName(),
+                null);
+
         return dtoMapper.toCategoryResponseDTO(updatedCategory);
     }
 
@@ -112,8 +122,13 @@ public class CategoryServiceImpl implements CategoryService {
 
         Category category = categoryRepository.findByIdAndUserId(categoryId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Category", "id", categoryId));
+        String categoryName = category.getName();
 
         categoryRepository.delete(category);
         log.info("✅ Category deleted - ID: {}", categoryId);
+
+        activityLogService.logActivity(userId, null, "Category", categoryId,
+                "DELETED", "Deleted category: " + categoryName,
+                null);
     }
 }
