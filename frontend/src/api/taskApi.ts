@@ -32,12 +32,22 @@ export const taskApi = {
   deleteTask: (taskId: number): Promise<ApiResponse<null>> => 
     axiosInstance.delete(`/tasks/${taskId}`),
 
-  filterTasks: (filterData: TaskFilterDTO): Promise<ApiResponse<Task[]>> => 
-    axiosInstance.post<Task[]>('/tasks/filter', filterData),
+  filterTasks: (filterData: TaskFilterDTO): Promise<ApiResponse<{ content: Task[]; totalElements: number; totalPages: number }>> => 
+    axiosInstance.post('/tasks/filter', filterData),
 
   getOverdueTasks: (): Promise<ApiResponse<Task[]>> => 
     axiosInstance.get<Task[]>('/tasks/overdue'),
 
   getTasksDueSoon: (days = 7): Promise<ApiResponse<Task[]>> => 
-    axiosInstance.get<Task[]>(`/tasks/due-soon?days=${days}`)
+    axiosInstance.get<Task[]>(`/tasks/due-soon?days=${days}`),
+
+  getProductivity: (): Promise<ApiResponse<{
+    currentStreak: number; longestStreak: number; tasksCompletedToday: number;
+    weeklyGoal: number; weeklyProgress: number;
+    weeklyChart: { label: string; value: number }[];
+    monthlyChart: { label: string; value: number }[];
+  }>> => axiosInstance.get('/tasks/productivity'),
+
+  reorderTasks: (order: { id: number; position: number }[]): Promise<ApiResponse<null>> =>
+    axiosInstance.put('/tasks/reorder', { order }),
 };
