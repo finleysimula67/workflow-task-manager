@@ -9,6 +9,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AuthCallback from './pages/AuthCallback';
+import ActivityLog from './pages/ActivityLog';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDetails from './pages/UserDetails';
 import UserProfile from './pages/UserProfile';
@@ -21,6 +22,8 @@ import Categories from './pages/Categories';
 import Statistics from './pages/Statistics';
 import ChangePassword from './pages/ChangePassword';
 import LoginHistory from './pages/LoginHistory';
+import Teams from './pages/Teams';
+import TeamDetail from './pages/TeamDetail';
 import LandingPage from './pages/public/LandingPage';
 import About from './pages/public/About';
 import Features from './pages/public/Features';
@@ -88,6 +91,9 @@ function App() {
                         <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
                         <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
                         <Route path="/login-history" element={<ProtectedRoute><LoginHistory /></ProtectedRoute>} />
+                        <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+                        <Route path="/teams/:id" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
+                        <Route path="/activity" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
                         <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
                         <Route path="/admin/users/:userId" element={<AdminRoute><UserDetails /></AdminRoute>} />
                     </Route>
