@@ -1,408 +1,231 @@
-import type { ReactElement } from 'react';
-import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { authApi } from '../api/authApi';
-import toast from 'react-hot-toast';
-import { ArrowLeft, Eye, EyeOff, Check, X } from 'lucide-react';
-import type { PasswordStrength } from '../types';
+import { useState, useEffect } from "react"
+import { useNavigate, Link } from "react-router-dom"
+import { authApi } from "../api/authApi"
+import toast from "react-hot-toast"
+import { Eye, EyeOff, Check, X } from "lucide-react"
 
-function Register(): ReactElement {
-  const navigate = useNavigate();
+type Strength = "weak" | "fair" | "good" | "strong"
 
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-  });
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>('weak');
+function Register() {
+  const navigate = useNavigate()
+  const [form, setForm] = useState({ username: "", email: "", password: "", confirmPassword: "" })
+  const [show, setShow] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState<Record<string, string>>({})
+  const [strength, setStrength] = useState<Strength>("weak")
 
   useEffect(() => {
-    const handlePageShow = (event: PagesTransitionEvent) => {
-      if (event.persisted) {
-        window.location.reload();
-      }
-    };
-    window.addEventListener('pageshow', handlePageShow);
-    return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
+    const handle = (event: PageTransitionEvent) => { if (event.persisted) window.location.reload() }
+    window.addEventListener("pageshow", handle)
+    return () => window.removeEventListener("pageshow", handle)
+  }, [])
 
-  const handleGoogleSignUp = () => {
-    const googleAuthUrl = 'http://localhost:8080/oauth2/authorization/google';
-    window.location.assign(googleAuthUrl);
-  };
+  const calcStrength = (p: string): Strength => {
+    let score = 0
+    if (p.length >= 8) score++
+    if (p.length >= 12) score++
+    if (/[a-z]/.test(p)) score++
+    if (/[A-Z]/.test(p)) score++
+    if (/[0-9]/.test(p)) score++
+    if (/[@#$%^&+=!]/.test(p)) score++
+    if (score <= 2) return "weak"
+    if (score <= 4) return "fair"
+    if (score <= 5) return "good"
+    return "strong"
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const strengthColor = { weak: "bg-red-500/50", fair: "bg-orange-500/50", good: "bg-yellow-500/50", strong: "bg-green-500/50" }
+  const strengthLabel = { weak: "Weak", fair: "Fair", good: "Good", strong: "Strong" }
+  const strengthWidth = { weak: "25%", fair: "50%", good: "75%", strong: "100%" }
 
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-
-    // Calculate password strength when password changes
-    if (name === 'password') {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
-  };
-
-  const calculatePasswordStrength = (password: string): PasswordStrength => {
-    if (!password) return 'weak';
-    
-    let score = 0;
-    
-    // Length checks
-    if (password.length >= 8) score++;
-    if (password.length >= 12) score++;
-    if (password.length >= 16) score++;
-    
-    // Character type checks
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[@#$%^&+=!]/.test(password)) score++;
-    
-    if (score <= 2) return 'weak';
-    if (score <= 4) return 'fair';
-    if (score <= 6) return 'good';
-    return 'strong';
-  };
-
-  const getStrengthColor = (strength: PasswordStrength): string => {
-    switch (strength) {
-      case 'weak': return 'bg-red-500';
-      case 'fair': return 'bg-orange-500';
-      case 'good': return 'bg-yellow-500';
-      case 'strong': return 'bg-green-500';
-    }
-  };
-
-  const getStrengthLabel = (strength: PasswordStrength): string => {
-    switch (strength) {
-      case 'weak': return 'Weak';
-      case 'fair': return 'Fair';
-      case 'good': return 'Good';
-      case 'strong': return 'Strong';
-    }
-  };
-
-  const getStrengthWidth = (strength: PasswordStrength): string => {
-    switch (strength) {
-      case 'weak': return '25%';
-      case 'fair': return '50%';
-      case 'good': return '75%';
-      case 'strong': return '100%';
-    }
-  };
-
-  const passwordRequirements = [
-    { label: 'At least 8 characters', met: formData.password.length >= 8 },
-    { label: 'Contains uppercase letter', met: /[A-Z]/.test(formData.password) },
-    { label: 'Contains lowercase letter', met: /[a-z]/.test(formData.password) },
-    { label: 'Contains number', met: /[0-9]/.test(formData.password) },
-    { label: 'Contains special character', met: /[@#$%^&+=!]/.test(formData.password) },
-  ];
+  const requirements = [
+    { label: "8+ characters", met: form.password.length >= 8 },
+    { label: "Uppercase letter", met: /[A-Z]/.test(form.password) },
+    { label: "Lowercase letter", met: /[a-z]/.test(form.password) },
+    { label: "Number", met: /[0-9]/.test(form.password) },
+    { label: "Special character", met: /[@#$%^&+=!]/.test(form.password) },
+  ]
 
   const validate = () => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.username) {
-      newErrors.username = 'Username is required';
-    } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters';
-    } else if (formData.username.length > 50) {
-      newErrors.username = 'Username must not exceed 50 characters';
-    } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, underscores and hyphens';
-    }
-
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    const e: Record<string, string> = {}
+    if (!form.username) e.username = "Username is required"
+    else if (form.username.length < 3) e.username = "At least 3 characters"
+    if (!form.email) e.email = "Email is required"
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email"
+    if (!form.password) e.password = "Password is required"
+    if (form.password !== form.confirmPassword) e.confirmPassword = "Passwords don't match"
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!validate()) return;
-
-    setLoading(true);
-
+    e.preventDefault()
+    if (!validate()) return
+    setLoading(true)
     try {
-      const response = await authApi.register(formData);
-
-      if (response.success) {
-        toast.success(
-            'Registration successful! Please check your email to verify your account.'
-        );
-
-        setFormData({
-          username: '',
-          email: '',
-          password: '',
-          confirmPassword: '',
-        });
-
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
+      const res = await authApi.register(form)
+      if (res.success) {
+        toast.success("Registration successful! Check your email to verify.")
+        setTimeout(() => navigate("/login"), 2000)
       }
     } catch (error: any) {
-      const errorMessage =
-          error.response?.data?.message ||
-          'Registration failed. Please try again.';
-
-      if (error.response?.data?.fieldErrors) {
-        setErrors(error.response.data.fieldErrors);
-      } else if (error.response?.data?.errors) {
-        setErrors(error.response.data.errors);
-      }
-
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Registration failed.")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   return (
-      <div className="min-h-screen flex bg-[#020617]">
-
-        <div className="hidden md:flex w-1/2 relative items-center justify-center">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,#1e3a8a,transparent_40%),radial-gradient(circle_at_80%_70%,#7c3aed,transparent_40%)]"></div>
-          <div className="relative z-10 px-16 text-white">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="bg-white/10 p-3 rounded-lg backdrop-blur-md">
-                <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M9 11l3 3L22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
-              </div>
-              <h1 className="text-3xl font-bold">WorkFlow</h1>
+    <div className="min-h-screen bg-black flex">
+      <div className="hidden md:flex w-1/2 items-center justify-center px-16">
+        <div>
+          <div className="flex items-center gap-2 mb-8">
+            <div className="w-7 h-7 rounded-lg bg-white/10 flex items-center justify-center">
+              <span className="text-white text-[10px] font-bold">W</span>
             </div>
-            <h2 className="text-4xl font-semibold mb-4 leading-snug">
-              Build better habits. <br /> One task at a time.
-            </h2>
-            <p className="text-gray-400 max-w-md">
-              Start organizing your work, tracking your progress, and becoming more productive every day.
-            </p>
+            <span className="text-lg font-semibold text-white">WorkFlow</span>
           </div>
-        </div>
-
-        <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-10 relative">
-          <div className="w-full max-w-md bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl p-8 mt-6 md:mt-0 max-h-[90vh] overflow-y-auto">
-            <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold text-white mb-2">Create Account</h2>
-              <p className="text-gray-400">Join WorkFlow today</p>
-            </div>
-
-            <button
-                type="button"
-                onClick={handleGoogleSignUp}
-                className="w-full py-3 px-4 rounded-lg bg-white text-black font-semibold flex items-center justify-center gap-3 hover:bg-gray-100 transition-all duration-200 active:scale-95 mb-6 shadow-lg shadow-white/5"
-            >
-              <img
-                  src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                  alt="Google"
-                  className="w-5 h-5"
-              />
-              Continue with Google
-            </button>
-
-            <div className="relative flex items-center mb-6">
-              <div className="flex-grow border-t border-white/10"></div>
-              <span className="flex-shrink mx-4 text-gray-500 text-xs uppercase tracking-widest">or</span>
-              <div className="flex-grow border-t border-white/10"></div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Username</label>
-                <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleChange}
-                    placeholder="johndoe"
-                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                        errors.username ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
-                />
-                {errors.username && <p className="mt-1 text-sm text-red-400">{errors.username}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Email Address</label>
-                <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="you@example.com"
-                    className={`w-full px-4 py-3 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                        errors.email ? 'border-red-500' : 'border-white/10'
-                    } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
-                />
-                {errors.email && <p className="mt-1 text-sm text-red-400">{errors.email}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Password</label>
-                <div className="relative">
-                  <input
-                      type={showPassword ? 'text' : 'password'}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleChange}
-                      placeholder="Create a strong password"
-                      className={`w-full px-4 py-3 pr-12 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                          errors.password ? 'border-red-500' : 'border-white/10'
-                      } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
-                  />
-                  <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1"
-                  >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {errors.password && <p className="mt-1 text-sm text-red-400">{errors.password}</p>}
-                
-                {/* Password Strength Indicator */}
-                {formData.password && (
-                  <div className="mt-3">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-gray-400">Strength</span>
-                      <span className={`text-xs font-medium ${
-                        passwordStrength === 'weak' ? 'text-red-400' :
-                        passwordStrength === 'fair' ? 'text-orange-400' :
-                        passwordStrength === 'good' ? 'text-yellow-400' :
-                        'text-green-400'
-                      }`}>
-                        {getStrengthLabel(passwordStrength)}
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-300 ${getStrengthColor(passwordStrength)}`}
-                        style={{ width: getStrengthWidth(passwordStrength) }}
-                      />
-                    </div>
-                    
-                    {/* Password Requirements */}
-                    <div className="mt-3 space-y-1.5">
-                      {passwordRequirements.map((req, index) => (
-                        <div 
-                          key={index}
-                          className={`flex items-center gap-2 text-xs transition-colors ${
-                            req.met ? 'text-green-400' : 'text-gray-500'
-                          }`}
-                        >
-                          {req.met ? (
-                            <Check size={14} className="flex-shrink-0" />
-                          ) : (
-                            <X size={14} className="flex-shrink-0" />
-                          )}
-                          <span>{req.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-300 mb-2">Confirm Password</label>
-                <div className="relative">
-                  <input
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      name="confirmPassword"
-                      value={formData.confirmPassword}
-                      onChange={handleChange}
-                      placeholder="Re-enter your password"
-                      className={`w-full px-4 py-3 pr-12 rounded-lg bg-black/30 text-white placeholder-gray-500 border ${
-                          errors.confirmPassword ? 'border-red-500' : 'border-white/10'
-                      } focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition`}
-                  />
-                  <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition p-1"
-                  >
-                    {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
-                </div>
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
-                
-                {/* Password Match Indicator */}
-                {formData.confirmPassword && (
-                  <div className={`mt-1 flex items-center gap-2 text-xs ${
-                    formData.password === formData.confirmPassword ? 'text-green-400' : 'text-red-400'
-                  }`}>
-                    {formData.password === formData.confirmPassword ? (
-                      <>
-                        <Check size={14} />
-                        <span>Passwords match</span>
-                      </>
-                    ) : (
-                      <>
-                        <X size={14} />
-                        <span>Passwords do not match</span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full py-3 rounded-lg font-semibold text-white transition ${
-                      loading
-                          ? 'bg-gray-600 cursor-not-allowed'
-                          : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:scale-[1.02] active:scale-95 shadow-lg shadow-blue-500/30'
-                  }`}
-              >
-                {loading ? 'Creating Account...' : 'Sign Up'}
-              </button>
-            </form>
-
-            <p className="text-center text-gray-500 text-sm mt-6">
-              Already have an account?{' '}
-              <Link to="/login" className="text-blue-400 hover:text-blue-300 transition">
-                Sign In
-              </Link>
-            </p>
-          </div>
+          <h2 className="text-3xl font-bold text-white leading-tight mb-4">
+            Build better habits.<br />One task at a time.
+          </h2>
+          <p className="text-sm text-slate-500 max-w-sm">
+            Start organizing your work and tracking your progress.
+          </p>
         </div>
       </div>
-  );
+
+      <div className="w-full md:w-1/2 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm">
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-bold text-white mb-1">Create account</h2>
+            <p className="text-sm text-slate-500">Join WorkFlow today</p>
+          </div>
+
+          <button
+            onClick={() => window.location.assign("http://localhost:8080/oauth2/authorization/google")}
+            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white transition mb-6"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            Continue with Google
+          </button>
+
+          <div className="relative mb-6">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/[0.06]" /></div>
+            <div className="relative flex justify-center text-xs"><span className="px-2 bg-black text-slate-600">or email</span></div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5">Username</label>
+              <input
+                type="text"
+                value={form.username}
+                onChange={e => {
+                  setForm({ ...form, username: e.target.value })
+                  setErrors({ ...errors, username: "" })
+                }}
+                placeholder="johndoe"
+                className={`w-full px-4 py-2.5 rounded-lg bg-white/[0.03] border text-sm text-white placeholder-slate-600 outline-none transition ${errors.username ? "border-red-500/50" : "border-white/[0.08] focus:border-white/[0.15]"}`}
+              />
+              {errors.username && <p className="mt-1 text-xs text-red-400">{errors.username}</p>}
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5">Email</label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={e => {
+                  setForm({ ...form, email: e.target.value })
+                  setErrors({ ...errors, email: "" })
+                }}
+                placeholder="you@example.com"
+                className={`w-full px-4 py-2.5 rounded-lg bg-white/[0.03] border text-sm text-white placeholder-slate-600 outline-none transition ${errors.email ? "border-red-500/50" : "border-white/[0.08] focus:border-white/[0.15]"}`}
+              />
+              {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email}</p>}
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5">Password</label>
+              <div className="relative">
+                <input
+                  type={show ? "text" : "password"}
+                  value={form.password}
+                  onChange={e => {
+                    setForm({ ...form, password: e.target.value })
+                    setStrength(calcStrength(e.target.value))
+                    setErrors({ ...errors, password: "" })
+                  }}
+                  placeholder="Create a password"
+                  className={`w-full px-4 py-2.5 pr-10 rounded-lg bg-white/[0.03] border text-sm text-white placeholder-slate-600 outline-none transition ${errors.password ? "border-red-500/50" : "border-white/[0.08] focus:border-white/[0.15]"}`}
+                />
+                <button type="button" onClick={() => setShow(!show)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                  {show ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.password && <p className="mt-1 text-xs text-red-400">{errors.password}</p>}
+              {form.password && (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] text-slate-500">Strength</span>
+                    <span className="text-[11px] text-slate-400">{strengthLabel[strength]}</span>
+                  </div>
+                  <div className="h-1 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${strengthColor[strength]}`} style={{ width: strengthWidth[strength] }} />
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {requirements.map((r, i) => (
+                      <div key={i} className={`flex items-center gap-1.5 text-[11px] ${r.met ? "text-green-400" : "text-slate-600"}`}>
+                        {r.met ? <Check size={12} /> : <X size={12} />}
+                        {r.label}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div>
+              <label className="block text-xs text-slate-400 mb-1.5">Confirm password</label>
+              <div className="relative">
+                <input
+                  type={showConfirm ? "text" : "password"}
+                  value={form.confirmPassword}
+                  onChange={e => {
+                    setForm({ ...form, confirmPassword: e.target.value })
+                    setErrors({ ...errors, confirmPassword: "" })
+                  }}
+                  placeholder="Re-enter password"
+                  className={`w-full px-4 py-2.5 pr-10 rounded-lg bg-white/[0.03] border text-sm text-white placeholder-slate-600 outline-none transition ${errors.confirmPassword ? "border-red-500/50" : "border-white/[0.08] focus:border-white/[0.15]"}`}
+                />
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                  {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
+              {errors.confirmPassword && <p className="mt-1 text-xs text-red-400">{errors.confirmPassword}</p>}
+              {form.confirmPassword && (
+                <div className={`mt-1 flex items-center gap-1.5 text-[11px] ${form.password === form.confirmPassword ? "text-green-400" : "text-red-400"}`}>
+                  {form.password === form.confirmPassword ? <Check size={12} /> : <X size={12} />}
+                  {form.password === form.confirmPassword ? "Passwords match" : "Passwords don't match"}
+                </div>
+              )}
+            </div>
+            <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition-all disabled:opacity-50">
+              {loading ? "Creating account..." : "Sign up"}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-slate-600 mt-6">
+            Already have an account?{" "}
+            <Link to="/login" className="text-slate-400 hover:text-white transition">Sign in</Link>
+          </p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-export default Register;
+export default Register
