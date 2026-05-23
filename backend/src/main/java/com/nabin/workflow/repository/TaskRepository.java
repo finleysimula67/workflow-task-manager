@@ -10,8 +10,11 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificationExecutor<Task> {
@@ -47,9 +50,23 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
  long countTasksDueSoon(@Param("userId") Long userId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
+ // Full-text search using PostgreSQL tsvector
+ @Query(value = "SELECT * FROM tasks t WHERE t.user_id = :userId " +
+         "AND t.search_vector @@ plainto_tsquery('english', :query) " +
+         "ORDER BY ts_rank(t.search_vector, plainto_tsquery('english', :query)) DESC",
+         countQuery = "SELECT count(*) FROM tasks t WHERE t.user_id = :userId " +
+                 "AND t.search_vector @@ plainto_tsquery('english', :query)",
+         nativeQuery = true)
+ Page<Task> fullTextSearch(@Param("userId") Long userId, @Param("query") String query, Pageable pageable);
+
  // Delete method for admin
- void deleteByUserId(Long userId);
+  void deleteByUserId(Long userId);
 
+  @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.status = 'COMPLETED' AND t.completedAt >= :start")
+  long countCompletedSince(@Param("userId") Long userId, @Param("start") LocalDateTime start);
 
+  @Query("SELECT COUNT(t) FROM Task t WHERE t.user.id = :userId AND t.status = 'COMPLETED' AND t.completedAt BETWEEN :start AND :end")
+  long countCompletedBetween(@Param("userId") Long userId, @Param("start") LocalDateTime start, @Param("end") LocalDateTime end);
 
+  List<Task> findByUserIdOrderByPositionAsc(Long userId);
 }

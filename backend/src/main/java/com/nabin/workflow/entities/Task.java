@@ -69,6 +69,10 @@ public class Task {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(nullable = true)
+    @Builder.Default
+    private Integer position = 0;
+
     // Helper methods
     public boolean isOverdue() {
         if (dueDate == null || status == TaskStatus.COMPLETED || status == TaskStatus.ARCHIVED) {
