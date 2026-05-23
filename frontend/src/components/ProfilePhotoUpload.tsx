@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { authApi } from '../api/authApi';
 import toast from 'react-hot-toast';
 import { Camera, Upload, X, RotateCcw, ZoomIn, Sun, Contrast, RefreshCw, Check, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface ProfilePhotoUploadProps {
   currentPhoto?: string;
@@ -14,14 +16,14 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
-  
+
   const [zoom, setZoom] = useState(1);
   const [brightness, setBrightness] = useState(100);
   const [contrast, setContrast] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
-  
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
@@ -31,6 +33,15 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
+
+  useEffect(() => {
+    if (showEditor) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [showEditor]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -50,10 +61,6 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
     const url = URL.createObjectURL(file);
     setPreviewUrl(url);
     setShowEditor(true);
-    resetAll();
-  };
-
-  const resetAll = () => {
     setZoom(1);
     setBrightness(100);
     setContrast(100);
@@ -74,7 +81,6 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
     canvas.width = size;
     canvas.height = size;
 
-    ctx.clearRect(0, 0, size, size);
     ctx.save();
     ctx.translate(size / 2, size / 2);
     ctx.rotate((rotation * Math.PI) / 180);
@@ -89,7 +95,10 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
     const imgWidth = img.width * scale;
     const imgHeight = img.height * scale;
 
-    ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    const hasFilters = brightness !== 100 || contrast !== 100;
+    if (hasFilters) {
+      ctx.filter = `brightness(${brightness}%) contrast(${contrast}%)`;
+    }
     ctx.drawImage(img, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
     ctx.restore();
   }, [zoom, brightness, contrast, rotation, offsetX, offsetY]);
@@ -156,7 +165,7 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
 
         const file = new File([blob], 'profile-photo.png', { type: 'image/png' });
         const response = await authApi.uploadProfilePhoto(file);
-        
+
         if (response.success) {
           toast.success('Profile photo updated!');
           const fullUrl = `http://localhost:8080${response.data.profileImage}`;
@@ -180,216 +189,117 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  if (!showEditor) {
-    return (
-      <div className="flex flex-col items-center">
+  return (
+    <>
+      <motion.div whileHover={{ scale: 1.02 }} className="flex flex-col items-center">
         <div className="relative group">
           {currentPhoto ? (
-            <img 
-              src={currentPhoto} 
-              alt={username} 
-              className="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover border-4 border-slate-200 dark:border-slate-700 shadow-lg" 
-            />
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden border-4 border-white/[0.08] shadow-lg">
+              <img src={currentPhoto} alt={username} className="w-full h-full object-cover" />
+            </div>
           ) : (
-            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-4 border-slate-200 dark:border-slate-700 shadow-lg">
+            <div className="w-32 h-32 sm:w-40 sm:h-40 rounded-full overflow-hidden bg-white/10 flex items-center justify-center border-4 border-white/[0.08] shadow-lg">
               <span className="text-white text-4xl sm:text-5xl font-bold">{getInitials(username)}</span>
             </div>
           )}
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-          >
+          <button onClick={() => fileInputRef.current?.click()}
+            className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
             <Camera className="w-10 h-10 text-white" />
           </button>
         </div>
-        
-        <input 
-          ref={fileInputRef}
-          type="file" 
-          accept="image/*" 
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-        
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition dark:bg-blue-700 dark:hover:bg-blue-800"
-        >
-          <Upload size={18} />
-          Change Photo
+
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} className="hidden" />
+
+        <button onClick={() => fileInputRef.current?.click()}
+          className="mt-4 flex items-center gap-2 px-6 py-2.5 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition">
+          <Upload size={18} /> Change Photo
         </button>
-        
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">JPG, PNG, GIF, WebP - Max 30MB</p>
-      </div>
-    );
-  }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-slate-200 dark:border-slate-700 shrink-0">
-          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white">Edit Photo</h3>
-          <button onClick={closeEditor} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full">
-            <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-          </button>
-        </div>
+        <p className="mt-2 text-xs text-slate-500">JPG, PNG, GIF, WebP - Max 30MB</p>
+      </motion.div>
 
-        <div 
-          ref={containerRef}
-          className="p-3 flex justify-center bg-slate-50 dark:bg-slate-800/50 shrink-0"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          <div className="relative w-32 h-32 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-slate-200 dark:border-slate-600 shadow-lg">
-            <canvas ref={canvasRef} className="w-full h-full object-cover" />
-          </div>
-        </div>
-
-        <div className="p-3 sm:p-4 flex-1 overflow-y-auto min-h-0">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-x-6 sm:gap-y-4">
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 sm:gap-2">
-                  <ZoomIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Zoom
-                </label>
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">{Math.round(zoom * 100)}%</span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:dark:bg-blue-500 [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:dark:bg-blue-500 [&::-webkit-slider-runnable-track]:bg-slate-200 dark:[&::-webkit-slider-runnable-track]:bg-slate-600"
-              />
-            </div>
-
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 sm:gap-2">
-                  <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Brightness
-                </label>
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">{brightness}%</span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="200"
-                step="5"
-                value={brightness}
-                onChange={(e) => setBrightness(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:dark:bg-blue-500 [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:dark:bg-blue-500 [&::-webkit-slider-runnable-track]:bg-slate-200 dark:[&::-webkit-slider-runnable-track]:bg-slate-600"
-              />
-            </div>
-
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 sm:gap-2">
-                  <Contrast className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Contrast
-                </label>
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">{contrast}%</span>
-              </div>
-              <input
-                type="range"
-                min="50"
-                max="200"
-                step="5"
-                value={contrast}
-                onChange={(e) => setContrast(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:dark:bg-blue-500 [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:dark:bg-blue-500 [&::-webkit-slider-runnable-track]:bg-slate-200 dark:[&::-webkit-slider-runnable-track]:bg-slate-600"
-              />
-            </div>
-
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 sm:gap-2">
-                  <RotateCcw className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> Rotation
-                </label>
-                <span className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">{rotation}deg</span>
-              </div>
-              <input
-                type="range"
-                min="0"
-                max="360"
-                step="15"
-                value={rotation}
-                onChange={(e) => setRotation(parseInt(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer accent-blue-600 [&::-webkit-slider-thumb]:bg-blue-600 [&::-webkit-slider-thumb]:dark:bg-blue-500 [&::-moz-range-thumb]:bg-blue-600 [&::-moz-range-thumb]:dark:bg-blue-500 [&::-webkit-slider-runnable-track]:bg-slate-200 dark:[&::-webkit-slider-runnable-track]:bg-slate-600"
-              />
-            </div>
-          </div>
-
-          <div className="mt-4 space-y-1.5 sm:space-y-2">
-            <label className="text-xs sm:text-sm font-medium text-slate-700 dark:text-slate-200 flex items-center gap-1.5 sm:gap-2">
-              Position
-            </label>
-            <div className="flex items-center justify-center gap-2">
-              <button
-                onClick={() => moveImage(0, -10)}
-                className="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition text-slate-700 dark:text-slate-200"
-              >
-                <ArrowUp className="w-4 h-4 sm:w-5 sm:h-5" />
+      {showEditor && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}>
+          <div className="w-full max-w-lg mx-auto bg-[#111] border border-white/[0.07] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]"
+            onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] shrink-0">
+              <h3 className="text-base font-semibold text-white">Edit Photo</h3>
+              <button onClick={closeEditor} className="w-8 h-8 flex items-center justify-center hover:bg-white/10 rounded-lg transition-colors">
+                <X className="w-5 h-5 text-slate-400" />
               </button>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => moveImage(-10, 0)}
-                  className="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition text-slate-700 dark:text-slate-200"
-                >
-                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button
-                  onClick={() => moveImage(0, 10)}
-                  className="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition text-slate-700 dark:text-slate-200"
-                >
-                  <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-                <button
-                  onClick={() => moveImage(10, 0)}
-                  className="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-lg transition text-slate-700 dark:text-slate-200"
-                >
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            </div>
+
+            <div ref={containerRef} className="px-5 py-6 flex justify-center bg-black/50 shrink-0"
+              onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+              <div className="relative w-44 h-44 sm:w-52 sm:h-52 rounded-full overflow-hidden border-4 border-white/[0.06] shadow-xl">
+                <canvas ref={canvasRef} className="w-full h-full object-cover" />
+              </div>
+            </div>
+
+            <div className="px-5 py-4 flex-1 overflow-y-auto min-h-0 space-y-4">
+              <div className="space-y-4">
+                <SliderControl icon={<ZoomIn className="w-3.5 h-3.5" />} label="Zoom" value={`${Math.round(zoom * 100)}%`}
+                  min="0.5" max="2" step="0.1" valueNum={zoom} onChange={(v) => setZoom(parseFloat(v))} />
+                <SliderControl icon={<Sun className="w-3.5 h-3.5" />} label="Brightness" value={`${brightness}%`}
+                  min="50" max="200" step="5" valueNum={brightness} onChange={(v) => setBrightness(parseInt(v))} />
+                <SliderControl icon={<Contrast className="w-3.5 h-3.5" />} label="Contrast" value={`${contrast}%`}
+                  min="50" max="200" step="5" valueNum={contrast} onChange={(v) => setContrast(parseInt(v))} />
+                <SliderControl icon={<RotateCcw className="w-3.5 h-3.5" />} label="Rotation" value={`${rotation}°`}
+                  min="0" max="360" step="15" valueNum={rotation} onChange={(v) => setRotation(parseInt(v))} />
+              </div>
+
+              <div className="flex items-center justify-center gap-1 pt-2">
+                <button onClick={() => moveImage(0, -10)} className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white"><ArrowUp className="w-3.5 h-3.5" /></button>
+                <button onClick={() => moveImage(-10, 0)} className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white"><ArrowLeft className="w-3.5 h-3.5" /></button>
+                <div className="w-8 h-8 flex items-center justify-center"><div className="w-1.5 h-1.5 rounded-full bg-slate-600" /></div>
+                <button onClick={() => moveImage(10, 0)} className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white"><ArrowRight className="w-3.5 h-3.5" /></button>
+                <button onClick={() => moveImage(0, 10)} className="w-8 h-8 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-lg transition text-slate-400 hover:text-white"><ArrowDown className="w-3.5 h-3.5" /></button>
+              </div>
+            </div>
+
+            <div className="shrink-0 flex items-center justify-between px-5 py-4 border-t border-white/[0.06]">
+              <button onClick={() => { setZoom(1); setBrightness(100); setContrast(100); setRotation(0); setOffsetX(0); setOffsetY(0); }}
+                className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition text-sm font-medium">
+                <RefreshCw className="w-4 h-4" /> Reset
+              </button>
+              <div className="flex gap-3">
+                <button onClick={closeEditor}
+                  className="px-5 py-2 text-slate-400 hover:text-white hover:bg-white/10 rounded-xl transition text-sm font-medium">Cancel</button>
+                <button onClick={handleSave} disabled={uploading}
+                  className="flex items-center gap-2 px-5 py-2 bg-primary-500 hover:bg-primary-600 text-white font-medium rounded-xl transition disabled:opacity-50 text-sm shadow-lg shadow-primary-500/20">
+                  {uploading ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Saving...</>
+                    : <><Check className="w-4 h-4" /> Save</>}
                 </button>
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
 
-        <div className="shrink-0 flex items-center justify-between p-3 sm:p-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
-          <button
-            onClick={resetAll}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition text-sm"
-          >
-            <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            Reset
-          </button>
-          <div className="flex gap-2 sm:gap-3">
-            <button
-              onClick={closeEditor}
-              className="px-4 sm:px-5 py-2 text-slate-600 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition text-sm"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={uploading}
-              className="flex items-center gap-1.5 sm:gap-2 px-4 sm:px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition disabled:opacity-50 text-sm"
-            >
-              {uploading ? (
-                <>
-                  <div className="w-3.5 h-3.5 sm:w-4 sm:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span className="hidden sm:inline">Saving...</span>
-                </>
-              ) : (
-                <>
-                  <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  Save
-                </>
-              )}
-            </button>
-          </div>
+function SliderControl({ icon, label, value, min, max, step, valueNum, onChange }: {
+  icon: React.ReactNode; label: string; value: string;
+  min: string; max: string; step: string; valueNum: number; onChange: (v: string) => void;
+}) {
+  const pct = ((valueNum - parseFloat(min)) / (parseFloat(max) - parseFloat(min))) * 100;
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-slate-400 flex items-center gap-1.5">{icon} {label}</label>
+        <span className="text-xs text-slate-500 tabular-nums">{value}</span>
+      </div>
+      <div className="relative h-6 flex items-center">
+        <div className="absolute inset-x-0 h-1.5 rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-primary-500 transition-all duration-150" style={{ width: `${pct}%` }} />
         </div>
+        <input type="range" min={min} max={max} step={step} value={valueNum}
+          onChange={(e) => onChange(e.target.value)}
+          className="absolute inset-x-0 w-full h-1.5 opacity-0 cursor-pointer z-10" />
+        <div className="absolute w-4 h-4 rounded-full bg-primary-500 border-2 border-white/20 shadow-lg shadow-primary-500/30 pointer-events-none transition-all duration-150"
+          style={{ left: `calc(${pct}% - 8px)` }} />
       </div>
     </div>
   );
