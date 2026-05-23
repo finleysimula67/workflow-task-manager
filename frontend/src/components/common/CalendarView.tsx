@@ -82,9 +82,9 @@ export default function CalendarView({ tasks, onSelectDate, onSelectTask }: Cale
           onClick={() => handleDateClick(day)}
           className={`relative h-10 sm:h-12 flex flex-col items-center justify-center rounded-lg transition-all ${
             isSelected
-              ? 'bg-blue-500 text-white'
+              ? 'bg-white/20 text-white'
               : isToday
-                ? 'ring-2 ring-blue-500'
+                ? 'ring-2 ring-white/30'
                 : isPast
                   ? isDark
                     ? 'text-slate-600'
@@ -194,7 +194,7 @@ export default function CalendarView({ tasks, onSelectDate, onSelectTask }: Cale
                   </div>
                   <span className={`text-xs ml-4 ${
                     task.status === 'COMPLETED' ? 'text-green-500' :
-                    task.status === 'IN_PROGRESS' ? 'text-blue-500' :
+                    task.status === 'IN_PROGRESS' ? 'text-white' :
                     isDark ? 'text-slate-400' : 'text-slate-500'
                   }`}>
                     {task.status}
