@@ -43,7 +43,7 @@ function AuthCallback() {
         toast.success('Successfully logged in with Google!', { id: 'login-success' });
 
         // Move to dashboard and clear this page from history
-        navigate('/dashboard', { replace: true });
+        window.location.replace('/dashboard');
 
       } catch (error) {
         // OAuth error shown via toast
@@ -56,9 +56,9 @@ function AuthCallback() {
   }, [searchParams, navigate]);
 
   return (
-      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+      <div className="min-h-screen flex items-center justify-center bg-[#030712]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-white mx-auto"></div>
           <p className="mt-4 text-gray-400">Completing Google Sign-In...</p>
         </div>
       </div>
