@@ -84,12 +84,12 @@ export interface TaskRequestDTO {
 export interface TaskFilterDTO {
   status?: TaskStatus;
   priority?: TaskPriority;
-  categoryId?: number;
-  search?: string;
+  categoryIds?: number[];
+  searchQuery?: string;
   page?: number;
   size?: number;
   sortBy?: string;
-  sortDir?: 'asc' | 'desc';
+  sortDirection?: 'asc' | 'desc';
 }
 
 export interface TaskStats {
