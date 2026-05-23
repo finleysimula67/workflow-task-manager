@@ -1,5 +1,6 @@
 package com.nabin.workflow.services.interfaces;
 
+import com.nabin.workflow.dto.request.AdminUserUpdateDTO;
 import com.nabin.workflow.dto.request.ChangePasswordDTO;
 import com.nabin.workflow.dto.request.ResetPasswordRequest;
 import com.nabin.workflow.dto.request.UpdateProfileDTO;
@@ -20,6 +21,7 @@ public interface UserService {
     boolean existsByUsername(String username);
 
     UserResponseDTO updateUser(Long userId, @Valid UserRegistrationDTO updateDTO);
+    UserResponseDTO updateUserByAdmin(Long userId, AdminUserUpdateDTO updateDTO);
     List<UserResponseDTO> getAllUsers();
     void deleteUser(Long userId);
 
