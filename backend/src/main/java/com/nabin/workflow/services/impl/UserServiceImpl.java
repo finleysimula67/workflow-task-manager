@@ -1,5 +1,6 @@
 package com.nabin.workflow.services.impl;
 
+import com.nabin.workflow.dto.request.AdminUserUpdateDTO;
 import com.nabin.workflow.dto.request.ChangePasswordDTO;
 import com.nabin.workflow.dto.request.ResetPasswordRequest;
 import com.nabin.workflow.dto.request.UpdateProfileDTO;
@@ -15,6 +16,7 @@ import com.nabin.workflow.mapper.DTOMapper;
 import com.nabin.workflow.repository.*;
 import com.nabin.workflow.services.EmailService;
 import com.nabin.workflow.util.SecurityUtil;
+import com.nabin.workflow.services.interfaces.ActivityLogService;
 import com.nabin.workflow.services.interfaces.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,6 +54,7 @@ public class UserServiceImpl implements UserService {
     private final VerificationTokenRepository verificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final ActivityLogService activityLogService;
 
     @Value("${app.verification.token-expiration}")
     private Long verificationTokenExpiration;
@@ -102,6 +105,9 @@ public class UserServiceImpl implements UserService {
         createVerificationToken(savedUser);
 
         log.info("User registered successfully - ID: {}, Email: {}", savedUser.getId(), savedUser.getEmail());
+
+        activityLogService.logActivity(savedUser.getId(), null, "User", savedUser.getId(),
+                "REGISTERED", "User registered: " + savedUser.getEmail(), null);
 
         return dtoMapper.toUserResponseDTO(savedUser);
     }
@@ -425,6 +431,46 @@ public class UserServiceImpl implements UserService {
 
         if (updateDTO.getPassword() != null && !updateDTO.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(updateDTO.getPassword()));
+        }
+
+        userRepository.save(user);
+
+        return dtoMapper.toUserResponseDTO(user);
+    }
+
+    @Override
+    @Transactional
+    @PreAuthorize("hasRole('ADMIN')")
+    public UserResponseDTO updateUserByAdmin(Long userId, AdminUserUpdateDTO updateDTO) {
+        log.info("Admin updating user: {}", userId);
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (updateDTO.getUsername() != null) {
+            if (!user.getUsername().equals(updateDTO.getUsername()) && userRepository.existsByUsername(updateDTO.getUsername())) {
+                throw new DuplicateResourceException("Username", updateDTO.getUsername());
+            }
+            user.setUsername(updateDTO.getUsername());
+        }
+
+        if (updateDTO.getEmail() != null) {
+            if (!user.getEmail().equals(updateDTO.getEmail()) && userRepository.existsByEmail(updateDTO.getEmail())) {
+                throw new DuplicateResourceException("Email", updateDTO.getEmail());
+            }
+            user.setEmail(updateDTO.getEmail());
+        }
+
+        if (updateDTO.getEnabled() != null) {
+            user.setEnabled(updateDTO.getEnabled());
+        }
+
+        if (updateDTO.getRoles() != null) {
+            Set<Role> roles = updateDTO.getRoles().stream()
+                    .map(roleName -> roleRepository.findByName(roleName)
+                            .orElseThrow(() -> new ResourceNotFoundException("Role", "name", roleName)))
+                    .collect(Collectors.toSet());
+            user.setRoles(roles);
         }
 
         userRepository.save(user);
