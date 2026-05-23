@@ -7,6 +7,7 @@ import com.nabin.workflow.dto.response.TaskResponseDTO;
 import com.nabin.workflow.dto.response.TaskStatsDTO;
 import com.nabin.workflow.entities.TaskStatus;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,5 +38,13 @@ public interface TaskService {
     Long countOverdueTasks();
 
     TaskStatsDTO getTaskStats();
+
+    com.nabin.workflow.dto.response.    ProductivityDTO getProductivity();
+
+    void reorderTasks(java.util.List<com.nabin.workflow.dto.request.ReorderDTO.OrderEntry> order);
+
+    List<TaskResponseDTO> searchTasksFullText(String query);
+
+    Page<TaskResponseDTO> searchTasksFullTextPaged(String query, org.springframework.data.domain.Pageable pageable);
 
 }
