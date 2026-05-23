@@ -65,7 +65,7 @@ export default function PullToRefresh({ children, onRefresh, threshold = 80 }: P
       >
         <div
           className={`flex flex-col items-center gap-1 ${
-            isDark ? 'text-blue-400' : 'text-blue-600'
+            'text-white'
           }`}
         >
           <RefreshCw
