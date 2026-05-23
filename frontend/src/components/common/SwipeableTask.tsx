@@ -79,7 +79,7 @@ export default function SwipeableTask({
           {onEdit && (
             <button
               onClick={() => handleAction(onEdit)}
-              className="flex items-center justify-center w-14 h-full bg-blue-500 hover:bg-blue-600 text-white"
+              className="flex items-center justify-center w-14 h-full bg-white/10 hover:bg-white/20 text-white"
             >
               <Edit size={18} />
             </button>
