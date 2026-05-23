@@ -117,9 +117,9 @@ export default function Pagination({
                   onClick={() => onPageChange(page)}
                   className={`min-w-[36px] h-9 px-2 rounded-lg text-sm font-medium transition ${
                     page === currentPage
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-primary-500 text-white'
                       : isDark
-                        ? 'text-slate-300 hover:bg-slate-700'
+                        ? 'bg-white/5 text-slate-400'
                         : 'text-slate-600 hover:bg-slate-100'
                   }`}
                 >
