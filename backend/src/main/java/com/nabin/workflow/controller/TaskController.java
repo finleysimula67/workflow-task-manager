@@ -6,6 +6,8 @@ import com.nabin.workflow.dto.request.TaskRequestDTO;
 import com.nabin.workflow.dto.request.TaskUpdateDTO;
 import com.nabin.workflow.dto.response.TaskResponseDTO;
 import com.nabin.workflow.dto.response.TaskStatsDTO;
+import com.nabin.workflow.dto.response.ProductivityDTO;
+import com.nabin.workflow.dto.request.ReorderDTO;
 import com.nabin.workflow.entities.TaskStatus;
 import com.nabin.workflow.services.interfaces.TaskService;
 import jakarta.validation.Valid;
@@ -63,6 +65,20 @@ public class TaskController {
         );
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/productivity")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<ProductivityDTO>> getProductivity() {
+        ProductivityDTO productivity = taskService.getProductivity();
+        return ResponseEntity.ok(ApiResponse.success("Productivity data retrieved", productivity));
+    }
+
+    @PutMapping("/reorder")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Void>> reorderTasks(@Valid @RequestBody ReorderDTO dto) {
+        taskService.reorderTasks(dto.getOrder());
+        return ResponseEntity.ok(ApiResponse.success("Tasks reordered"));
     }
 
     // -------------------------------------------------------
@@ -205,7 +221,7 @@ public class TaskController {
     }
 
     /**
-     * Search tasks by keyword
+     * Search tasks by keyword using PostgreSQL full-text search
      * GET /api/tasks/search?q=meeting
      */
     @GetMapping("/search")
@@ -213,19 +229,13 @@ public class TaskController {
     public ResponseEntity<ApiResponse<List<TaskResponseDTO>>> searchTasks(
             @RequestParam String q) {
 
-        log.info("Searching tasks with query: {}", q);
+        log.info("Full-text searching tasks with query: {}", q);
 
-        TaskFilterDTO filterDTO = TaskFilterDTO.builder()
-                .searchQuery(q)
-                .page(0)
-                .size(100)
-                .build();
-
-        Page<TaskResponseDTO> tasks = taskService.filterTasks(filterDTO);
+        List<TaskResponseDTO> tasks = taskService.searchTasksFullText(q);
 
         ApiResponse<List<TaskResponseDTO>> response = ApiResponse.success(
-                "Tasks found: " + tasks.getTotalElements(),
-                tasks.getContent()
+                "Tasks found: " + tasks.size(),
+                tasks
         );
 
         return ResponseEntity.ok(response);
