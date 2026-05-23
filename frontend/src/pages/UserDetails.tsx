@@ -1,32 +1,40 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../api/axios';
+import { adminApi } from '../api/adminApi';
 import toast from 'react-hot-toast';
-import { ArrowLeft, User, Mail, Shield, CheckCircle, XCircle, Hash } from 'lucide-react';
+import { ArrowLeft, User, Mail, Shield, CheckCircle, XCircle, Hash, Save, Edit3, ToggleLeft, ToggleRight } from 'lucide-react';
+
+interface UserDetailData {
+  id: number;
+  username: string;
+  email: string;
+  enabled: boolean;
+  createdAt?: string;
+  profileImage?: string;
+  roles?: { id: number; name: string }[];
+}
 
 function UserDetails() {
   const navigate = useNavigate();
   const { userId } = useParams();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserDetailData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [editingProfile, setEditingProfile] = useState<boolean>(false);
+  const [editForm, setEditForm] = useState({ username: '', email: '' });
+  const [saving, setSaving] = useState<boolean>(false);
 
-  useEffect(() => {
-    loadUser();
-  }, [userId]);
+  useEffect(() => { loadUser(); }, [userId]);
 
   const loadUser = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/admin/users/${userId}`);
+      const response = await adminApi.getUser(Number(userId));
       if (response.success) {
         setUser(response.data);
+        setEditForm({ username: response.data.username, email: response.data.email });
       }
-    } catch (error) {
-      toast.error('Failed to load user details');
-      navigate('/admin');
-    } finally {
-      setLoading(false);
-    }
+    } catch { toast.error('Failed to load user details'); navigate('/admin'); }
+    finally { setLoading(false); }
   };
 
   const getProfileImageUrl = (profileImage?: string) => {
@@ -35,12 +43,52 @@ function UserDetails() {
     return `http://localhost:8080${profileImage}`;
   };
 
+  const toggleEnabled = async () => {
+    if (!user) return;
+    try {
+      setSaving(true);
+      const response = await adminApi.updateUser(user.id, { enabled: !user.enabled });
+      if (response.success) { setUser(response.data); toast.success(`User ${response.data.enabled ? 'enabled' : 'disabled'}`); }
+    } catch { toast.error('Failed to update status'); }
+    finally { setSaving(false); }
+  };
+
+  const toggleRole = async () => {
+    if (!user) return;
+    const isAdmin = user.roles?.some(r => r.name === 'ROLE_ADMIN');
+    try {
+      setSaving(true);
+      const newRoles = isAdmin ? ['ROLE_USER'] : ['ROLE_ADMIN'];
+      const response = await adminApi.updateUser(user.id, { roles: newRoles });
+      if (response.success) { setUser(response.data); toast.success(`Role updated to ${isAdmin ? 'User' : 'Admin'}`); }
+    } catch { toast.error('Failed to update role'); }
+    finally { setSaving(false); }
+  };
+
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    try {
+      setSaving(true);
+      const response = await adminApi.updateUser(user.id, editForm);
+      if (response.success) {
+        setUser(response.data);
+        setEditForm({ username: response.data.username, email: response.data.email });
+        setEditingProfile(false);
+        toast.success('Profile updated');
+      }
+    } catch { toast.error('Failed to update profile'); }
+    finally { setSaving(false); }
+  };
+
+  const inputCls = "w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/[0.06] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-white/20 transition";
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-500 border-t-transparent mx-auto" />
-          <p className="mt-4 text-slate-600 dark:text-slate-400">Loading user details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-white/10 border-t-transparent mx-auto" />
+          <p className="mt-4 text-slate-400">Loading user details...</p>
         </div>
       </div>
     );
@@ -50,13 +98,9 @@ function UserDetails() {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-600 dark:text-slate-400 text-lg">User not found</p>
-          <button
-            onClick={() => navigate('/admin')}
-            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition font-medium"
-          >
-            Back to Admin
-          </button>
+          <p className="text-slate-400 text-lg">User not found</p>
+          <button onClick={() => navigate('/admin')}
+            className="mt-4 px-4 py-2 bg-primary-500 text-white hover:bg-primary-600 rounded-xl font-medium">Back to Admin</button>
         </div>
       </div>
     );
@@ -66,54 +110,45 @@ function UserDetails() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/admin')}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition font-medium"
-        >
-          <ArrowLeft size={18} />
-          Back to Admin
+        <button onClick={() => navigate('/admin')}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 transition font-medium">
+          <ArrowLeft size={18} /> Back
         </button>
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white">User Details</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Viewing details for {user.username}</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-white">User Details</h1>
+          <p className="text-slate-400 mt-1">Managing {user.username}</p>
         </div>
       </div>
 
-      {/* User Card */}
-      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        {/* User Header Banner */}
-        <div className="h-24 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600" />
-
+      <div className="bg-white/5 border border-white/[0.06] rounded-xl overflow-hidden">
+        <div className="h-24 bg-white/5 relative">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-500/10 via-transparent to-amber-500/5" />
+        </div>
         <div className="px-6 pb-6">
-          {/* Avatar */}
           <div className="flex items-end gap-4 -mt-10 mb-6">
             {getProfileImageUrl(user.profileImage) ? (
-              <img
-                src={getProfileImageUrl(user.profileImage)!}
-                alt={user.username}
-                className="w-20 h-20 rounded-2xl object-cover shadow-xl border-4 border-white dark:border-slate-900"
-              />
+              <div className="w-20 h-20 rounded-2xl overflow-hidden shadow-xl border-4 border-[#0f0f1a] shrink-0">
+                <img src={getProfileImageUrl(user.profileImage)!} alt={user.username} className="w-full h-full object-cover" />
+              </div>
             ) : (
-              <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-3xl shadow-xl border-4 border-white dark:border-slate-900">
+              <div className="w-20 h-20 rounded-2xl overflow-hidden bg-white/10 flex items-center justify-center text-white font-bold text-3xl shadow-xl border-4 border-[#0f0f1a] shrink-0">
                 {user.username?.[0]?.toUpperCase()}
               </div>
             )}
-            <div className="pb-2">
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">{user.username}</h2>
+            <div className="pb-2 flex-1 min-w-0">
+              <h2 className="text-xl font-bold text-white truncate">{user.username}</h2>
               <div className="flex flex-wrap gap-2 mt-1">
-                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold ${user.enabled
-                  ? 'bg-green-100 dark:bg-green-500/20 text-green-700 dark:text-green-400'
-                  : 'bg-red-100 dark:bg-red-500/20 text-red-700 dark:text-red-400'
-                  }`}>
-                  {user.enabled
-                    ? <><CheckCircle size={12} /> Active</>
-                    : <><XCircle size={12} /> Inactive</>
-                  }
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                  user.enabled
+                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                }`}>
+                  {user.enabled ? <CheckCircle size={12} /> : <XCircle size={12} />}
+                  {user.enabled ? 'Active' : 'Inactive'}
                 </span>
                 {isAdmin && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
                     <Shield size={12} /> Admin
                   </span>
                 )}
@@ -121,84 +156,116 @@ function UserDetails() {
             </div>
           </div>
 
-          {/* Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* User ID */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <div className="p-2 rounded-lg bg-slate-200 dark:bg-slate-700">
-                <Hash size={16} className="text-slate-600 dark:text-slate-300" />
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/[0.06]">
+              <div className="p-2 rounded-lg bg-white/5">
+                <Hash size={16} className="text-primary-400" />
               </div>
               <div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">User ID</p>
-                <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-white">{user.id}</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">User ID</p>
+                <p className="mt-0.5 text-base font-semibold text-white">{user.id}</p>
               </div>
             </div>
 
-            {/* Username */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-500/20">
-                <User size={16} className="text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Username</p>
-                <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-white">{user.username}</p>
-              </div>
-            </div>
-
-            {/* Email */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <div className="p-2 rounded-lg bg-indigo-100 dark:bg-indigo-500/20">
-                <Mail size={16} className="text-indigo-600 dark:text-indigo-400" />
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Email</p>
-                <p className="mt-0.5 text-base font-semibold text-slate-900 dark:text-white">{user.email}</p>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-              <div className={`p-2 rounded-lg ${user.enabled ? 'bg-green-100 dark:bg-green-500/20' : 'bg-red-100 dark:bg-red-500/20'}`}>
-                {user.enabled
-                  ? <CheckCircle size={16} className="text-green-600 dark:text-green-400" />
-                  : <XCircle size={16} className="text-red-600 dark:text-red-400" />
-                }
-              </div>
-              <div>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Account Status</p>
-                <p className={`mt-0.5 text-base font-semibold ${user.enabled ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
-                  }`}>
-                  {user.enabled ? 'Active' : 'Inactive'}
-                </p>
-              </div>
-            </div>
-
-            {/* Role */}
-            <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 md:col-span-2">
-              <div className="p-2 rounded-lg bg-purple-100 dark:bg-purple-500/20">
-                <Shield size={16} className="text-purple-600 dark:text-purple-400" />
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/[0.06]">
+              <div className="p-2 rounded-lg bg-white/5">
+                <User size={16} className="text-primary-400" />
               </div>
               <div className="flex-1">
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Roles</p>
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Username</p>
+                {editingProfile ? (
+                  <input type="text" value={editForm.username}
+                    onChange={(e) => setEditForm({ ...editForm, username: e.target.value })}
+                    className="mt-1 w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/[0.06] text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20" />
+                ) : (
+                  <p className="mt-0.5 text-base font-semibold text-white">{user.username}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/[0.06]">
+              <div className="p-2 rounded-lg bg-white/5">
+                <Mail size={16} className="text-primary-400" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Email</p>
+                {editingProfile ? (
+                  <input type="email" value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="mt-1 w-full px-3 py-1.5 rounded-lg bg-white/5 border border-white/[0.06] text-white text-sm focus:outline-none focus:ring-2 focus:ring-white/20" />
+                ) : (
+                  <p className="mt-0.5 text-base font-semibold text-white">{user.email}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/[0.06]">
+              <div className="p-2 rounded-lg bg-white/5">
+                {user.enabled ? <CheckCircle size={16} className="text-emerald-400" /> : <XCircle size={16} className="text-red-400" />}
+              </div>
+              <div className="flex-1">
+                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Account Status</p>
+                <div className="flex items-center justify-between mt-0.5">
+                  <p className="text-base font-semibold text-white">{user.enabled ? 'Active' : 'Inactive'}</p>
+                  <button onClick={toggleEnabled} disabled={saving}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1.5 border ${
+                      user.enabled
+                        ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20 border-red-500/20'
+                        : 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20'
+                    } disabled:opacity-50`}>
+                    {user.enabled ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                    {user.enabled ? 'Disable' : 'Enable'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3 p-4 rounded-xl bg-white/5 border border-white/[0.06] md:col-span-2">
+              <div className="p-2 rounded-lg bg-white/5">
+                <Shield size={16} className="text-amber-400" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">Roles</p>
+                  <button onClick={toggleRole} disabled={saving}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white/5 text-slate-300 hover:bg-white/10 transition border border-white/[0.06] inline-flex items-center gap-1.5 disabled:opacity-50">
+                    <Shield size={14} /> {isAdmin ? 'Demote to User' : 'Promote to Admin'}
+                  </button>
+                </div>
                 <div className="mt-1.5 flex flex-wrap gap-2">
                   {user.roles && user.roles.length > 0 ? (
                     user.roles.map((role: any, index: number) => (
-                      <span
-                        key={index}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${role.name === 'ROLE_ADMIN'
-                          ? 'bg-purple-100 dark:bg-purple-500/20 text-purple-700 dark:text-purple-400'
-                          : 'bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400'
-                          }`}
-                      >
-                        {role.name?.replace('ROLE_', '') || role}
-                      </span>
+                      <span key={index}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                          role.name === 'ROLE_ADMIN'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                            : 'bg-white/5 text-slate-400 border-white/[0.06]'
+                        }`}>{role.name?.replace('ROLE_', '') || role}</span>
                     ))
                   ) : (
-                    <span className="text-slate-500 dark:text-slate-400 text-sm">No roles assigned</span>
+                    <span className="text-slate-400 text-sm">No roles assigned</span>
                   )}
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="mt-6 flex items-center gap-3 pt-4 border-t border-white/[0.06]">
+            {editingProfile ? (
+              <>
+                <button onClick={handleSaveProfile} disabled={saving}
+                  className="px-5 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition inline-flex items-center gap-2 disabled:opacity-50">
+                  <Save size={16} /> {saving ? 'Saving...' : 'Save Changes'}
+                </button>
+                <button onClick={() => { setEditingProfile(false); setEditForm({ username: user.username, email: user.email }); }}
+                  className="px-5 py-2.5 rounded-xl bg-white/5 text-slate-300 hover:bg-white/10 text-sm font-medium transition">Cancel</button>
+              </>
+            ) : (
+              <button onClick={() => setEditingProfile(true)}
+                className="px-5 py-2.5 rounded-xl bg-primary-500 text-white text-sm font-semibold hover:bg-primary-600 transition inline-flex items-center gap-2">
+                <Edit3 size={16} /> Edit Profile
+              </button>
+            )}
           </div>
         </div>
       </div>
