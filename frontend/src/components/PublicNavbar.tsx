@@ -1,120 +1,129 @@
-import type { ReactElement } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react"
+import { Link, useLocation } from "react-router-dom"
+import { motion, AnimatePresence } from "framer-motion"
+import { Menu, X } from "lucide-react"
+import { cn } from "../lib/utils"
 
-function PublicNavbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const location = useLocation();
+const links = [
+  { label: "Features", href: "/features" },
+  { label: "Pricing", href: "/pricing" },
+  { label: "About", href: "/about" },
+  { label: "Contact", href: "/contact" },
+]
 
-  // Reset menu state and ensure component "wakes up" on route change
-  // This helps prevent the navbar from getting stuck in a hidden or
-  // background state during back-button navigation.
+export default function PublicNavbar() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const location = useLocation()
+
   useEffect(() => {
-    setIsMenuOpen(false);
-  }, [location.pathname]);
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener("scroll", onScroll)
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
+  useEffect(() => {
+    setIsOpen(false)
+  }, [location.pathname])
 
   return (
-      <nav className="bg-[#030712]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-20">
-
-            {/* Logo */}
-            <div className="flex items-center">
-              <Link to="/" className="flex items-center group">
-              <span className="text-2xl font-bold tracking-tight">
-                <span className="text-[#89CFF0] group-hover:text-white transition duration-300">
-                  Work
-                </span>
-                <span className="text-white group-hover:text-[#89CFF0] transition duration-300">
-                  Flow
-                </span>
-              </span>
-              </Link>
+    <nav
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+        scrolled
+          ? "bg-black/70 backdrop-blur-2xl border-b border-white/[0.05]"
+          : "bg-transparent",
+      )}
+    >
+      <div className="max-w-7xl mx-auto px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 md:h-20">
+          <Link to="/" className="flex items-center gap-2.5 group">
+            <div className="w-8 h-8 rounded-xl bg-white/[0.08] border border-white/[0.06] flex items-center justify-center group-hover:bg-white/[0.12] transition-all">
+              <span className="text-white text-xs font-bold">W</span>
             </div>
+            <span className="text-base font-bold text-white tracking-tight">WorkFlow</span>
+          </Link>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden md:flex items-center gap-8">
+            {links.map((link) => (
               <Link
-                  to="/features"
-                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
-              >
-                Features
-              </Link>
-              <Link
-                  to="/about"
-                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
-              >
-                About
-              </Link>
-              <Link
-                  to="/pricing"
-                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
-              >
-                Pricing
-              </Link>
-              <Link
-                  to="/contact"
-                  className="text-slate-300 hover:text-white transition-colors font-medium text-sm tracking-wide"
-              >
-                Contact
-              </Link>
-            </div>
-
-            {/* Auth Buttons - Desktop */}
-            <div className="hidden md:flex items-center space-x-6">
-              <Link
-                  to="/login"
-                  className="text-slate-300 hover:text-white transition font-medium text-sm"
-              >
-                Login
-              </Link>
-              <Link
-                  to="/register"
-                  className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:opacity-90 transition shadow-[0_0_20px_rgba(79,70,229,0.3)] font-semibold text-sm"
-              >
-                Get Started
-              </Link>
-            </div>
-
-            {/* Mobile menu button */}
-            <button
-                className="md:hidden p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 hover:text-white transition"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                aria-label="Toggle menu"
-            >
-              <svg
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-              >
-                {isMenuOpen ? (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                key={link.href}
+                to={link.href}
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  location.pathname === link.href
+                    ? "text-white"
+                    : "text-slate-400 hover:text-white",
                 )}
-              </svg>
-            </button>
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Mobile menu */}
-          {isMenuOpen && (
-              <div className="md:hidden py-6 border-t border-slate-800 animate-in fade-in slide-in-from-top-4 duration-200">
-                <div className="flex flex-col space-y-4">
-                  <Link to="/features" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Features</Link>
-                  <Link to="/about" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">About</Link>
-                  <Link to="/pricing" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Pricing</Link>
-                  <Link to="/contact" className="text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Contact</Link>
-                  <div className="border-t border-slate-800 pt-6 mt-2 space-y-4">
-                    <Link to="/login" className="block text-slate-300 hover:text-white px-2 py-1 font-medium text-lg">Login</Link>
-                    <Link to="/register" className="block px-6 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-center font-bold shadow-lg">Get Started</Link>
-                  </div>
-                </div>
-              </div>
-          )}
-        </div>
-      </nav>
-  );
-}
+          <div className="hidden md:flex items-center gap-3">
+            <Link
+              to="/login"
+              className="px-5 py-2.5 text-sm font-medium text-slate-400 hover:text-white transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              to="/register"
+              className="px-5 py-2.5 text-sm font-semibold rounded-xl bg-primary-500 text-white hover:bg-primary-600 transition-all shadow-lg shadow-primary-500/20"
+            >
+              Get started
+            </Link>
+          </div>
 
-export default PublicNavbar;
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="md:hidden p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-slate-400 hover:text-white transition"
+          >
+            {isOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden border-t border-white/[0.04] bg-black/95 backdrop-blur-2xl overflow-hidden"
+          >
+            <div className="px-6 py-6 space-y-4">
+              {links.map((link) => (
+                <Link
+                  key={link.href}
+                  to={link.href}
+                  className={cn(
+                    "block text-sm font-medium py-2 transition-colors",
+                    location.pathname === link.href ? "text-white" : "text-slate-400 hover:text-white",
+                  )}
+                >
+                  {link.label}
+                </Link>
+              ))}
+              <div className="border-t border-white/[0.06] pt-5 space-y-3">
+                <Link
+                  to="/login"
+                  className="block text-sm font-medium text-slate-400 hover:text-white py-2"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="block text-center px-6 py-3 rounded-xl bg-primary-500 text-white font-semibold text-sm hover:bg-primary-600 transition"
+                >
+                  Get started
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </nav>
+  )
+}
