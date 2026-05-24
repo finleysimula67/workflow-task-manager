@@ -5,8 +5,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,12 +18,17 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
     private final JwtTokenProvider jwtTokenProvider;
     private final CustomUserDetailsService customUserDetailsService;
+
+    public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider, CustomUserDetailsService customUserDetailsService) {
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.customUserDetailsService = customUserDetailsService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -32,20 +37,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain) throws ServletException, IOException {
 
         try {
-            // Get JWT token from request
             String jwt = getJwtFromRequest(request);
 
-            // Validate token and set authentication
             if (StringUtils.hasText(jwt) && jwtTokenProvider.validateToken(jwt)) {
-
-                // Get email from token
                 String email = jwtTokenProvider.getEmailFromToken(jwt);
                 log.debug("Valid JWT for email: {}", email);
 
-                // Load user details
                 UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
 
-                // Create authentication token
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 userDetails,
@@ -54,30 +53,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         );
 
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // Set authentication in security context
                 SecurityContextHolder.getContext().setAuthentication(authentication);
 
                 log.debug("Set authentication for user: {}", email);
             }
+        } catch (UsernameNotFoundException ex) {
+            log.error("User not found during JWT authentication: {}", ex.getMessage());
+        } catch (Exception ex) {
+            log.error("JWT authentication failed [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage());
         }
-    catch (UsernameNotFoundException ex) {
-        log.error("User not found during JWT authentication: {}", ex.getMessage());
-    } catch (Exception ex) {
-        log.error("JWT authentication failed [{}]: {}", ex.getClass().getSimpleName(), ex.getMessage());
-    }
 
         filterChain.doFilter(request, response);
     }
 
-    /**
-     * Extract JWT token from Authorization header
-     */
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
 
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);  // Remove "Bearer " prefix
+            return bearerToken.substring(7);
         }
 
         return null;
