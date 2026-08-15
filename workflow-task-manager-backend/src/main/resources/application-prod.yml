@@ -14,14 +14,11 @@ spring:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
-      # Lowered from 30s to prevent startup stalling during pool initialization
       connection-timeout: 10000 
       idle-timeout: 300000
       max-lifetime: 600000
 
   jpa:
-    # CRITICAL FIX: Changed from 'update' to 'none' or 'validate'. 
-    # 'update' runs expensive schema constraint checks on remote PostgreSQL, causing startup to freeze.
     hibernate:
       ddl-auto: validate
     show-sql: false
@@ -31,7 +28,6 @@ spring:
         use_sql_comments: false
     open-in-view: false
 
-  # Disables template path scanning warnings for REST APIs
   thymeleaf:
     check-template-location: false
 
@@ -118,12 +114,12 @@ jwt:
   issuer: WorkFlow
 
 cors:
-  allow-local-origins: ${CORS_ALLOW_LOCAL_ORIGINS:false}
+  allow-local-origins: ${CORS_ALLOW_LOCAL_ORIGINS}
   allowed:
     origins: ${FRONTEND_URL}
 
 file:
-  upload-dir: ${UPLOAD_DIR:uploads}
+  upload-dir: ${UPLOAD_DIR}
 
 logging:
   level:
@@ -131,7 +127,6 @@ logging:
     com.nabin.workflow: INFO
     org.springframework: WARN
     org.hibernate: WARN
-    # Suppresses the AuthenticationProvider log noise during startup
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
   pattern:
