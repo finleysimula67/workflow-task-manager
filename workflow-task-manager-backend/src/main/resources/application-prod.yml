@@ -14,19 +14,26 @@ spring:
     hikari:
       maximum-pool-size: 5
       minimum-idle: 1
-      connection-timeout: 30000
+      # Lowered from 30s to prevent startup stalling during pool initialization
+      connection-timeout: 10000 
       idle-timeout: 300000
       max-lifetime: 600000
 
   jpa:
+    # CRITICAL FIX: Changed from 'update' to 'none' or 'validate'. 
+    # 'update' runs expensive schema constraint checks on remote PostgreSQL, causing startup to freeze.
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
         format_sql: false
         use_sql_comments: false
     open-in-view: false
+
+  # Disables template path scanning warnings for REST APIs
+  thymeleaf:
+    check-template-location: false
 
   servlet:
     multipart:
@@ -124,6 +131,8 @@ logging:
     com.nabin.workflow: INFO
     org.springframework: WARN
     org.hibernate: WARN
+    # Suppresses the AuthenticationProvider log noise during startup
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
 
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
