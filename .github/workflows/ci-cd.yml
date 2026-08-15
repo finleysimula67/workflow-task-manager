@@ -1,4 +1,4 @@
-name: Full-Stack CI/CD Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
@@ -8,11 +8,14 @@ on:
 
 jobs:
   # ==========================================
-  # 1. BACKEND CI (Spring Boot / Java 21)
+  # 1. BACKEND CI (Spring Boot)
   # ==========================================
   backend-ci:
     name: Backend - Build & Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./workflow-task-manager-backend
 
     steps:
       - name: Checkout Repository
@@ -23,21 +26,20 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          cache: maven # Change to 'gradle' if using Gradle
-
-      - name: Grant Execute Permission for Maven Wrapper
-        run: chmod +x ./mvnw || true
+          cache: maven
 
       - name: Build and Test Backend
-        # Adjust working-directory if backend is in a subfolder (e.g., working-directory: ./backend)
-        run: ./mvnw clean package
+        run: mvn clean package
 
   # ==========================================
-  # 2. FRONTEND CI (React / Vue / Next.js)
+  # 2. FRONTEND CI (React/Node.js)
   # ==========================================
   frontend-ci:
     name: Frontend - Build & Test
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./workflow-task-manager-frontend
 
     steps:
       - name: Checkout Repository
@@ -47,17 +49,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' # Change to 'yarn' or 'pnpm' if needed
-          # cache-dependency-path: './frontend/package-lock.json' # Uncomment if inside subfolder
+          cache: 'npm'
+          cache-dependency-path: './workflow-task-manager-frontend/package-lock.json'
 
       - name: Install Dependencies & Build Frontend
-        # Adjust working-directory if frontend is in a subfolder (e.g., working-directory: ./frontend)
         run: |
           npm ci
           npm run build --if-present
 
   # ==========================================
-  # 3. DEPLOYMENT (Render Hooks)
+  # 3. DEPLOYMENT (Render)
   # ==========================================
   deploy:
     name: Deploy Services to Render
