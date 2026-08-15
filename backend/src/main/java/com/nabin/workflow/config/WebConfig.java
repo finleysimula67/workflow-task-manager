@@ -9,30 +9,47 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    @Value("${cors.allowed.origins}")
-    private String allowedOrigins;
+    private final List<String> allowedOrigins;
+    private final boolean allowLocalDevOrigins;
+
+    /**
+     * CORS is profile/environment driven.
+     * <p>
+     * - Development (default profile): {@code cors.allow-local-origins=true} enables
+     *   {@code http://localhost:*} and {@code http://127.0.0.1:*} in addition to the
+     *   explicitly configured origins.
+     * - Production: set {@code cors.allow-local-origins=false} so ONLY the explicitly
+     *   configured trusted origins are allowed. Wildcards are never used.
+     */
+    public WebConfig(
+            @Value("${cors.allowed.origins:}") String allowedOrigins,
+            @Value("${cors.allow-local-origins:false}") boolean allowLocalDevOrigins) {
+        this.allowedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        this.allowLocalDevOrigins = allowLocalDevOrigins;
+    }
 
     // ── Shared helper so both methods use identical logic ──────
     private List<String> getAllowedOriginPatterns() {
         List<String> patterns = new ArrayList<>();
 
-        // Always allow localhost in any port (for local development)
-        patterns.add("http://localhost:*");
-        patterns.add("http://127.0.0.1:*");
+        // Only added in development (cors.allow-local-origins=true)
+        if (allowLocalDevOrigins) {
+            patterns.add("http://localhost:*");
+            patterns.add("http://127.0.0.1:*");
+        }
 
-        // Add whatever is in your config (production URLs, etc.)
-        // e.g. "https://myapp.com,https://www.myapp.com"
-        Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .forEach(patterns::add);
+        // Explicitly configured trusted origins (e.g. production URLs)
+        patterns.addAll(allowedOrigins);
 
         return patterns;
     }
@@ -40,8 +57,8 @@ public class WebConfig implements WebMvcConfigurer {
     // ── Spring MVC CORS (for regular controllers) ──────────────
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")                          // was /api/**, now covers all paths
-                .allowedOriginPatterns(                     // was allowedOrigins() — patterns support wildcards + credentials
+        registry.addMapping("/**")
+                .allowedOriginPatterns(
                         getAllowedOriginPatterns().toArray(new String[0])
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
@@ -56,7 +73,7 @@ public class WebConfig implements WebMvcConfigurer {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Now reads from config — same origins as addCorsMappings above
+        // Same origins as addCorsMappings above
         configuration.setAllowedOriginPatterns(getAllowedOriginPatterns());
 
         configuration.setAllowedMethods(Arrays.asList(
@@ -78,7 +95,7 @@ public class WebConfig implements WebMvcConfigurer {
         configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration); // was /api/**, now matches addCorsMappings
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
 }

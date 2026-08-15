@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useNavigate, Link } from "react-router-dom"
 import { authApi } from "../api/authApi"
+import { API_ORIGIN } from "../api/config"
 import toast from "react-hot-toast"
 import { Eye, EyeOff, Check, X } from "lucide-react"
 
@@ -103,7 +104,7 @@ function Register() {
           </div>
 
           <button
-            onClick={() => window.location.assign("http://localhost:8080/oauth2/authorization/google")}
+            onClick={() => window.location.assign(`${API_ORIGIN}/oauth2/authorization/google`)}
             className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg bg-white/[0.03] border border-white/[0.08] text-sm text-slate-300 hover:bg-white/[0.06] hover:text-white transition mb-6"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24">

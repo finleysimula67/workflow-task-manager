@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authApi } from '../api/authApi';
 import { adminApi, type UserWithStats } from '../api/adminApi';
+import { buildApiUrl } from '../api/config';
 import toast from 'react-hot-toast';
 import { Users, CheckCircle, XCircle, Shield, Search, Eye, Trash2, Grid, List } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -75,7 +76,7 @@ export default function AdminDashboard() {
   const getProfileImageUrl = (profileImage?: string) => {
     if (!profileImage) return null;
     if (profileImage.startsWith('http')) return profileImage;
-    return `http://localhost:8080${profileImage}`;
+    return buildApiUrl(profileImage);
   };
 
   const filteredUsers = users.filter(user =>

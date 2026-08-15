@@ -1,7 +1,6 @@
 import axios from 'axios';
+import { API_URL } from './config';
 import type { LoginCredentials, RegisterData, User, AuthTokens, ApiResponse } from '../types';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<ApiResponse<AuthTokens>> => {
@@ -36,7 +35,7 @@ export const authApi = {
     };
   },
 
-  register: async (userData: RegisterData): Promise<ApiResponse<AuthTokens>> => {
+  register: async (userData: RegisterData): Promise<ApiResponse<User>> => {
     const response = await axios.post(`${API_URL}/auth/register`, userData);
     return {
       success: true,
@@ -52,7 +51,7 @@ export const authApi = {
     }
     const response = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
     if (response.data.success && response.data.data) {
-      const { token: accessToken, refreshToken: newRefreshToken } = response.data.data;
+      const { accessToken, refreshToken: newRefreshToken } = response.data.data;
       localStorage.setItem('token', accessToken);
       localStorage.setItem('refreshToken', newRefreshToken);
       return {

@@ -4,6 +4,7 @@ import axios from '../api/axios';
 import toast from 'react-hot-toast';
 import type { User } from '../types';
 import { authApi } from '../api/authApi';
+import { buildApiUrl } from '../api/config';
 import ProfilePhotoUpload from '../components/ProfilePhotoUpload';
 import { notificationPreferenceApi, type NotificationPreference } from '../api/notificationPreferenceApi';
 import { User as UserIcon, Mail, Calendar, Shield, CheckCircle, XCircle, Sparkles, Edit3, Save, Bell, Settings } from 'lucide-react';
@@ -33,7 +34,7 @@ function UserProfile() {
       const response = await axios.get('/users/me');
       if (response.success) {
         setProfile(response.data);
-        const imgUrl = response.data.profileImage ? `http://localhost:8080${response.data.profileImage}` : undefined;
+        const imgUrl = response.data.profileImage ? buildApiUrl(response.data.profileImage) : undefined;
         setProfileImage(imgUrl);
         setEditForm({ username: response.data.username, email: response.data.email });
       }

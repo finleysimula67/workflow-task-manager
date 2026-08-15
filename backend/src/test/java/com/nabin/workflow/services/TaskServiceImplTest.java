@@ -10,6 +10,7 @@ import com.nabin.workflow.repository.CategoryRepository;
 import com.nabin.workflow.repository.TaskRepository;
 import com.nabin.workflow.repository.UserRepository;
 import com.nabin.workflow.services.impl.TaskServiceImpl;
+import com.nabin.workflow.services.interfaces.ActivityLogService;
 import com.nabin.workflow.util.SecurityUtil;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -49,6 +50,8 @@ class TaskServiceImplTest {
     private CategoryRepository categoryRepository;
     @Mock
     private DTOMapper dtoMapper;
+    @Mock
+    private ActivityLogService activityLogService;
 
     @InjectMocks
     private TaskServiceImpl taskService;

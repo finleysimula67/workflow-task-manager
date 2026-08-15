@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { API_URL } from './config';
 import { authApi } from './authApi';
 import type { ApiResponse } from '../types';
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
@@ -70,7 +71,7 @@ axiosInstance.interceptors.response.use(
 
       try {
         const response = await axios.post(
-          `${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/auth/refresh`,
+          `${API_URL}/auth/refresh`,
           { refreshToken },
           { headers: { 'Content-Type': 'application/json' } }
         );

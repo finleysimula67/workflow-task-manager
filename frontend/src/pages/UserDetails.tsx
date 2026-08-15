@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { adminApi } from '../api/adminApi';
+import { buildApiUrl } from '../api/config';
 import toast from 'react-hot-toast';
 import { ArrowLeft, User, Mail, Shield, CheckCircle, XCircle, Hash, Save, Edit3, ToggleLeft, ToggleRight } from 'lucide-react';
 
@@ -40,7 +41,7 @@ function UserDetails() {
   const getProfileImageUrl = (profileImage?: string) => {
     if (!profileImage) return null;
     if (profileImage.startsWith('http')) return profileImage;
-    return `http://localhost:8080${profileImage}`;
+    return buildApiUrl(profileImage);
   };
 
   const toggleEnabled = async () => {

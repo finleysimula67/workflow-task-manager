@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { authApi } from '../api/authApi';
+import { buildApiUrl } from '../api/config';
 import toast from 'react-hot-toast';
 import { Camera, Upload, X, RotateCcw, ZoomIn, Sun, Contrast, RefreshCw, Check, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -168,7 +169,7 @@ export default function ProfilePhotoUpload({ currentPhoto, username, onPhotoUpda
 
         if (response.success) {
           toast.success('Profile photo updated!');
-          const fullUrl = `http://localhost:8080${response.data.profileImage}`;
+          const fullUrl = buildApiUrl(response.data.profileImage);
           onPhotoUpdate?.(fullUrl);
           closeEditor();
         }

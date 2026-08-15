@@ -24,7 +24,7 @@ FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Copy JAR from build stage
-COPY --from=build /app/target/workflow-*.jar app.jar
+COPY --from=build /app/target/workflow-0.0.1-SNAPSHOT.jar app.jar
 
 # Create uploads directory
 RUN mkdir -p /app/uploads && \

@@ -25,9 +25,18 @@ mvnw.cmd
 **/application-local.properties
 **/application-dev.properties
 
+# Environment files with secrets (any directory)
+.env
+**/.env
+*.env.local
+**/.env.local
+
 # Logs
 *.log
 logs/
+
+# Runtime uploads (user content - must never be committed)
+backend/uploads/
 
 # ============================================
 # FRONTEND (React/Node)
@@ -89,3 +98,4 @@ src/main/java/com/nabin/taskmanager/
 ├── mapper/
 │   └── DTOMapper.java
 └── TaskManagerApplication.java
+/backend/.settings

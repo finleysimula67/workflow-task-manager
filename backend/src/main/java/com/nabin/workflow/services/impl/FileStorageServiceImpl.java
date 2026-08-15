@@ -80,9 +80,23 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public Resource loadFileAsResource(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new FileStorageException("File path must not be empty");
+        }
+
         try {
-            Path file = this.fileStorageLocation.resolve(filePath).normalize();
-            Resource resource = new UrlResource(file.toUri());
+            Path resolvedPath = this.fileStorageLocation.resolve(filePath).normalize();
+
+            // Path traversal defense: the resolved path must stay inside the upload root.
+            // resolve()+normalize() collapses ".." segments and drive/UNC roots, so any
+            // traversal attempt (e.g. "../", "..%2f", "/absolute/path") ends up outside
+            // the storage location and is rejected here.
+            if (!resolvedPath.startsWith(this.fileStorageLocation)) {
+                log.warn("Rejected file path outside storage root: {}", filePath);
+                throw new FileStorageException("Invalid file path: " + filePath);
+            }
+
+            Resource resource = new UrlResource(resolvedPath.toUri());
 
             if (resource.exists() && resource.isReadable()) {
                 log.info("✅ File loaded: {}", filePath);
@@ -99,9 +113,20 @@ public class FileStorageServiceImpl implements FileStorageService {
 
     @Override
     public void deleteFile(String filePath) {
+        if (filePath == null || filePath.isBlank()) {
+            throw new FileStorageException("File path must not be empty");
+        }
+
         try {
-            Path file = this.fileStorageLocation.resolve(filePath).normalize();
-            Files.deleteIfExists(file);
+            Path resolvedPath = this.fileStorageLocation.resolve(filePath).normalize();
+
+            // Same containment check as loadFileAsResource (defense in depth)
+            if (!resolvedPath.startsWith(this.fileStorageLocation)) {
+                log.warn("Rejected file path outside storage root: {}", filePath);
+                throw new FileStorageException("Invalid file path: " + filePath);
+            }
+
+            Files.deleteIfExists(resolvedPath);
             log.info("✅ File deleted: {}", filePath);
         } catch (IOException e) {
             log.error("❌ Failed to delete file: {}", filePath, e);

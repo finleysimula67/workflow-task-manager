@@ -48,9 +48,10 @@ export default function ChangePassword() {
     if (formData.newPassword.length < 6) { toast.error('New password must be at least 6 characters'); return; }
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.post('/users/me/change-password', { currentPassword: formData.currentPassword, newPassword: formData.newPassword }, {
-        headers: { Authorization: `Bearer ${token}` }
+      await axios.put('/users/me/password', {
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
       });
       toast.success('Password changed successfully!');
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });

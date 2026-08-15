@@ -5,9 +5,7 @@ import com.nabin.workflow.dto.response.FileAttachmentResponseDTO;
 import com.nabin.workflow.services.interfaces.FileAttachmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,9 +14,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 
 @RestController
@@ -28,9 +23,6 @@ import java.util.List;
 public class FileAttachmentController {
 
     private final FileAttachmentService fileAttachmentService;
-
-    @Value("${file.upload-dir}")
-    private String uploadDir;
 
     @PostMapping("/attachments/task/{taskId}")
     @PreAuthorize("isAuthenticated()")
@@ -71,35 +63,5 @@ public class FileAttachmentController {
         fileAttachmentService.deleteAttachment(id);
         ApiResponse<Void> response = ApiResponse.success("Attachment deleted successfully");
         return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/files/{type}/{filename}")
-    public ResponseEntity<Resource> serveFile(@PathVariable String type, @PathVariable String filename) {
-        try {
-            String uploadPath = System.getProperty("user.dir") + "/" + uploadDir + "/" + type;
-            Path filePath = Paths.get(uploadPath).resolve(filename);
-            Resource resource = new UrlResource(filePath.toUri());
-
-            if (resource.exists() && resource.isReadable()) {
-                String contentType = "application/octet-stream";
-                String lowerFilename = filename.toLowerCase();
-                if (lowerFilename.endsWith(".png")) contentType = "image/png";
-                else if (lowerFilename.endsWith(".jpg") || lowerFilename.endsWith(".jpeg")) contentType = "image/jpeg";
-                else if (lowerFilename.endsWith(".gif")) contentType = "image/gif";
-                else if (lowerFilename.endsWith(".webp")) contentType = "image/webp";
-                else if (lowerFilename.endsWith(".pdf")) contentType = "application/pdf";
-
-                return ResponseEntity.ok()
-                        .contentType(MediaType.parseMediaType(contentType))
-                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
-                        .body(resource);
-            } else {
-                log.warn("File not found: {}", filePath);
-                return ResponseEntity.notFound().build();
-            }
-        } catch (IOException e) {
-            log.error("Error serving file: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
     }
 }

@@ -19,17 +19,38 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret:defaultSecretKeyThatIsVeryLongAndSecureEnoughToSatisfyHMACSHA512Require}")
-    private String jwtSecret;
+    private final String jwtSecret;
+    private final long jwtExpirationMs;
+    private final Long jwtRefreshExpirationMs;
+    private final String jwtIssuer;
 
-    @Value("${jwt.expiration:86400000}")
-    private long jwtExpirationMs;
-
-    @Value("${jwt.issuer:WorkFlow}")
-    private String jwtIssuer;
-
-    @Value("${jwt.refresh-expiration:604800000}")
-    private Long jwtRefreshExpirationMs;
+    /**
+     * Injects JWT configuration. The signing secret is REQUIRED - there is deliberately
+     * no hardcoded fallback. Missing or too-short secrets fail fast at startup instead of
+     * silently signing tokens with a known key.
+     */
+    public JwtTokenProvider(
+            @Value("${jwt.secret}") String jwtSecret,
+            @Value("${jwt.expiration:86400000}") long jwtExpirationMs,
+            @Value("${jwt.refresh-expiration:604800000}") Long jwtRefreshExpirationMs,
+            @Value("${jwt.issuer:WorkFlow}") String jwtIssuer) {
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT signing secret is not configured. Set the 'jwt.secret' property "
+                            + "(e.g. the JWT_SECRET environment variable). No fallback secret is used."
+            );
+        }
+        if (jwtSecret.trim().length() < 32) {
+            throw new IllegalStateException(
+                    "JWT signing secret must be at least 32 characters long (currently "
+                            + jwtSecret.trim().length() + "). Generate a strong random secret."
+            );
+        }
+        this.jwtSecret = jwtSecret;
+        this.jwtExpirationMs = jwtExpirationMs;
+        this.jwtRefreshExpirationMs = jwtRefreshExpirationMs;
+        this.jwtIssuer = jwtIssuer;
+    }
 
     public Long getJwtRefreshExpirationMs() {
         return jwtRefreshExpirationMs;

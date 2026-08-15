@@ -90,7 +90,7 @@ public class SecurityConfig {
                                 "/api/test/**",
                                 "/login/oauth2/**",
                                 "/oauth2/**",
-                                "/api/files/**"
+                                "/actuator/health"
                         ).permitAll()
 
                         // Admin endpoints (protected by @PreAuthorize)

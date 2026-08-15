@@ -9,9 +9,16 @@ services:
     rootDir: backend
     dockerContext: .
     dockerfilePath: ./Dockerfile  # Fixed path relative to 'backend' folder
+    healthCheckPath: /actuator/health
     envVars:
       - key: PORT
         value: 8080
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: CORS_ALLOW_LOCAL_ORIGINS
+        value: "false"
+      - key: UPLOAD_DIR
+        value: uploads
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_USERNAME
@@ -40,5 +47,5 @@ services:
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
     envVars:
-      - key: VITE_API_BASE_URL
+      - key: VITE_API_URL
         sync: false

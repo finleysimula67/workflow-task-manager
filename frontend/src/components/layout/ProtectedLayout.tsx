@@ -5,6 +5,7 @@ import Sidebar from './Sidebar';
 import BottomNavigation from '../common/BottomNavigation';
 import { useTheme } from '../../context/ThemeContext';
 import { authApi } from '../../api/authApi';
+import { buildApiUrl } from '../../api/config';
 import type { User } from '../../types';
 import toast from 'react-hot-toast';
 import { 
@@ -31,7 +32,7 @@ export default function ProtectedLayout() {
       try {
         const response = await axios.get('/users/me');
         if (response.success && response.data.profileImage) {
-          setProfileImage(`http://localhost:8080${response.data.profileImage}`);
+          setProfileImage(buildApiUrl(response.data.profileImage));
         }
       } catch {
         // ignore

@@ -63,7 +63,7 @@ describe('Login', () => {
     await user.click(screen.getByRole('button', { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/email is invalid/i)).toBeInTheDocument();
+      expect(screen.getByText(/invalid email/i)).toBeInTheDocument();
     });
   });
 
