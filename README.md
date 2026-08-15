@@ -34,7 +34,9 @@ WorkFlow provides a simple workspace for managing everyday tasks with secure aut
 ```bash
 cd backend
 mvn spring-boot:run
-````
+```
+
+Backend runs at `http://localhost:8080`.
 
 ### Frontend
 
@@ -44,16 +46,22 @@ npm install
 npm run dev
 ```
 
+Frontend runs at `http://localhost:5173`.
+
 Configure the required environment variables using the provided `.env.example` files.
 
 ## Testing
 
+### Backend
+
 ```bash
-# Backend
 cd backend
 mvn test
+```
 
-# Frontend
+### Frontend
+
+```bash
 cd frontend
 npm run test:run
 ```
@@ -64,9 +72,4 @@ Active development.
 
 ## License
 
-MIT License
-
-```
-
-This one is closer to the README style I'd use for a **real engineering portfolio project**: short, readable, and focused on what a developer actually needs.
-```
+This project is licensed under the [MIT License](LICENSE).
