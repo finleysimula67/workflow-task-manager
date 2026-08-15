@@ -54,7 +54,7 @@ jobs:
 
       - name: Install Dependencies & Build Frontend
         run: |
-          npm ci
+          npm ci --legacy-peer-deps
           npm run build --if-present
 
   # ==========================================
