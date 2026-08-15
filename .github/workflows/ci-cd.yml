@@ -1,0 +1,75 @@
+name: Full-Stack CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # ==========================================
+  # 1. BACKEND CI (Spring Boot / Java 21)
+  # ==========================================
+  backend-ci:
+    name: Backend - Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven # Change to 'gradle' if using Gradle
+
+      - name: Grant Execute Permission for Maven Wrapper
+        run: chmod +x ./mvnw || true
+
+      - name: Build and Test Backend
+        # Adjust working-directory if backend is in a subfolder (e.g., working-directory: ./backend)
+        run: ./mvnw clean package
+
+  # ==========================================
+  # 2. FRONTEND CI (React / Vue / Next.js)
+  # ==========================================
+  frontend-ci:
+    name: Frontend - Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm' # Change to 'yarn' or 'pnpm' if needed
+          # cache-dependency-path: './frontend/package-lock.json' # Uncomment if inside subfolder
+
+      - name: Install Dependencies & Build Frontend
+        # Adjust working-directory if frontend is in a subfolder (e.g., working-directory: ./frontend)
+        run: |
+          npm ci
+          npm run build --if-present
+
+  # ==========================================
+  # 3. DEPLOYMENT (Render Hooks)
+  # ==========================================
+  deploy:
+    name: Deploy Services to Render
+    needs: [backend-ci, frontend-ci]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Backend Deploy
+        run: |
+          curl -s -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
+
+      - name: Trigger Frontend Deploy
+        run: |
+          curl -s -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
