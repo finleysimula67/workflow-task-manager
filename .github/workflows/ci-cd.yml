@@ -63,10 +63,10 @@ jobs:
 
 
   # ==========================================
-  # 3. DEPLOYMENT (Render)
+  # 3. DEPLOY BACKEND TO RENDER
   # ==========================================
-  deploy:
-    name: Deploy Services to Render
+  deploy-backend:
+    name: Deploy Backend to Render
 
     needs:
       - backend-ci
@@ -82,7 +82,7 @@ jobs:
     steps:
 
       # ----------------------------------------
-      # Backend
+      # Backend → Render
       # ----------------------------------------
       - name: Trigger Backend Deploy
         env:
@@ -96,20 +96,3 @@ jobs:
           curl --fail --silent --show-error \
             -X POST \
             "$RENDER_BACKEND_DEPLOY_HOOK"
-
-
-      # ----------------------------------------
-      # Frontend
-      # ----------------------------------------
-      - name: Trigger Frontend Deploy
-        env:
-          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_FRONTEND_DEPLOY_HOOK" ]; then
-            echo "ERROR: RENDER_FRONTEND_DEPLOY_HOOK is not configured."
-            exit 1
-          fi
-
-          curl --fail --silent --show-error \
-            -X POST \
-            "$RENDER_FRONTEND_DEPLOY_HOOK"
