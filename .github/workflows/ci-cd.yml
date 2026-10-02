@@ -2,17 +2,19 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
+
   # ==========================================
   # 1. BACKEND CI (Spring Boot)
   # ==========================================
   backend-ci:
     name: Backend - Build & Test
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./workflow-task-manager-backend
@@ -31,12 +33,14 @@ jobs:
       - name: Build Backend (Skip DB Tests)
         run: mvn clean package -DskipTests
 
+
   # ==========================================
   # 2. FRONTEND CI (React/Node.js)
   # ==========================================
   frontend-ci:
     name: Frontend - Build & Test
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ./workflow-task-manager-frontend
@@ -57,20 +61,55 @@ jobs:
           npm ci --legacy-peer-deps
           npm run build --if-present
 
+
   # ==========================================
   # 3. DEPLOYMENT (Render)
   # ==========================================
   deploy:
     name: Deploy Services to Render
-    needs: [backend-ci, frontend-ci]
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+
+    needs:
+      - backend-ci
+      - frontend-ci
+
+    if: >
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/main' ||
+       github.ref == 'refs/heads/master')
+
     runs-on: ubuntu-latest
 
     steps:
-      - name: Trigger Backend Deploy
-        run: |
-          curl -s -X POST "${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}"
 
-      - name: Trigger Frontend Deploy
+      # ----------------------------------------
+      # Backend
+      # ----------------------------------------
+      - name: Trigger Backend Deploy
+        env:
+          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
         run: |
-          curl -s -X POST "${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}"
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "ERROR: RENDER_BACKEND_DEPLOY_HOOK is not configured."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error \
+            -X POST \
+            "$RENDER_BACKEND_DEPLOY_HOOK"
+
+
+      # ----------------------------------------
+      # Frontend
+      # ----------------------------------------
+      - name: Trigger Frontend Deploy
+        env:
+          RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$RENDER_FRONTEND_DEPLOY_HOOK" ]; then
+            echo "ERROR: RENDER_FRONTEND_DEPLOY_HOOK is not configured."
+            exit 1
+          fi
+
+          curl --fail --silent --show-error \
+            -X POST \
+            "$RENDER_FRONTEND_DEPLOY_HOOK"
