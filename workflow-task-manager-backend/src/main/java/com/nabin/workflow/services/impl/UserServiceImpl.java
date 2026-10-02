@@ -361,7 +361,7 @@ public class UserServiceImpl implements UserService {
 
             Files.write(filePath, file.getBytes());
 
-            String imageUrl = "/api/files/profiles/" + newFilename;
+            String imageUrl = "/api/users/profile-image/" + newFilename;
 
             user.setProfileImage(imageUrl);
             userRepository.save(user);
