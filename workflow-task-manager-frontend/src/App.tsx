@@ -2,6 +2,7 @@ import { useEffect, type ReactElement } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedLayout from './components/layout/ProtectedLayout';
 import { authApi } from './api/authApi';
 
@@ -52,13 +53,34 @@ const HistoryGuard = () => {
 interface RouteProps { children: ReactElement; }
 
 const ProtectedRoute = ({ children }: RouteProps) => {
-    const token = localStorage.getItem('token');
-    if (!token) return <Navigate to="/login" replace />;
+    const { isAuthenticated, isInitializing } = useAuth();
+    if (isInitializing) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#030712]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-white mx-auto"></div>
+                    <p className="mt-4 text-gray-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
     return children;
 };
 
 const AdminRoute = ({ children }: RouteProps) => {
-    if (!authApi.isAuthenticated()) return <Navigate to="/login" />;
+    const { isAuthenticated, isInitializing } = useAuth();
+    if (isInitializing) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#030712]">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-white mx-auto"></div>
+                    <p className="mt-4 text-gray-400">Loading...</p>
+                </div>
+            </div>
+        );
+    }
+    if (!isAuthenticated) return <Navigate to="/login" />;
     if (!authApi.isAdmin()) return <Navigate to="/dashboard" />;
     return children;
 };
@@ -66,42 +88,44 @@ const AdminRoute = ({ children }: RouteProps) => {
 function App() {
     return (
         <ThemeProvider>
-            <Router>
-                <ScrollToTop />
-                <HistoryGuard />
-                <Routes>
-                    <Route path="/" element={<LandingPage />} />
-                    <Route path="/features" element={<Features />} />
-                    <Route path="/about" element={<About />} />
-                    <Route path="/pricing" element={<Pricing />} />
-                    <Route path="/contact" element={<Contact />} />
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
-                    <Route path="/verify-email" element={<VerifyEmail />} />
-                    <Route path="/resend-verification" element={<ResendVerification />} />
-                    <Route path="/forgot-password" element={<ForgotPassword />} />
-                    <Route path="/reset-password" element={<ResetPassword />} />
-                    
-                    <Route element={<ProtectedLayout />}>
-                        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                        <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
-                        <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
-                        <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
-                        <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
-                        <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
-                        <Route path="/login-history" element={<ProtectedRoute><LoginHistory /></ProtectedRoute>} />
-                        <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
-                        <Route path="/teams/:id" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
-                        <Route path="/activity" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
-                        <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-                        <Route path="/admin/users/:userId" element={<AdminRoute><UserDetails /></AdminRoute>} />
-                    </Route>
-                    
-                    <Route path="*" element={<Navigate to="/" />} />
-                </Routes>
-            </Router>
-            <Toaster position="top-right" />
+            <AuthProvider>
+                <Router>
+                    <ScrollToTop />
+                    <HistoryGuard />
+                    <Routes>
+                        <Route path="/" element={<LandingPage />} />
+                        <Route path="/features" element={<Features />} />
+                        <Route path="/about" element={<About />} />
+                        <Route path="/pricing" element={<Pricing />} />
+                        <Route path="/contact" element={<Contact />} />
+                        <Route path="/login" element={<Login />} />
+                        <Route path="/register" element={<Register />} />
+                        <Route path="/auth/callback" element={<AuthCallback />} />
+                        <Route path="/verify-email" element={<VerifyEmail />} />
+                        <Route path="/resend-verification" element={<ResendVerification />} />
+                        <Route path="/forgot-password" element={<ForgotPassword />} />
+                        <Route path="/reset-password" element={<ResetPassword />} />
+                        
+                        <Route element={<ProtectedLayout />}>
+                            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                            <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
+                            <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
+                            <Route path="/categories" element={<ProtectedRoute><Categories /></ProtectedRoute>} />
+                            <Route path="/statistics" element={<ProtectedRoute><Statistics /></ProtectedRoute>} />
+                            <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+                            <Route path="/login-history" element={<ProtectedRoute><LoginHistory /></ProtectedRoute>} />
+                            <Route path="/teams" element={<ProtectedRoute><Teams /></ProtectedRoute>} />
+                            <Route path="/teams/:id" element={<ProtectedRoute><TeamDetail /></ProtectedRoute>} />
+                            <Route path="/activity" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
+                            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                            <Route path="/admin/users/:userId" element={<AdminRoute><UserDetails /></AdminRoute>} />
+                        </Route>
+                        
+                        <Route path="*" element={<Navigate to="/" />} />
+                    </Routes>
+                </Router>
+                <Toaster position="top-right" />
+            </AuthProvider>
         </ThemeProvider>
     );
 }

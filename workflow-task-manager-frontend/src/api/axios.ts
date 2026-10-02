@@ -80,6 +80,22 @@ axiosInstance.interceptors.response.use(
           const { accessToken, refreshToken: newRefreshToken } = response.data.data;
           localStorage.setItem('token', accessToken);
           localStorage.setItem('refreshToken', newRefreshToken);
+          try {
+            const base64Url = accessToken.split('.')[1];
+            if (base64Url) {
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const payload = JSON.parse(atob(base64));
+              const user = {
+                id: payload.userId,
+                username: payload.username,
+                email: payload.sub,
+                roles: payload.roles ? payload.roles.split(',') : ['ROLE_USER']
+              };
+              localStorage.setItem('user', JSON.stringify(user));
+            }
+          } catch (e) {
+            console.error('Failed to update user from refreshed token:', e);
+          }
           axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
           originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
           processQueue(null, accessToken);

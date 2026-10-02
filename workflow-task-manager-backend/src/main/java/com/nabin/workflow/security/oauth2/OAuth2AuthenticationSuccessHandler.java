@@ -55,7 +55,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 .build()
                 .toUriString();
 
-        log.info("Redirecting to: {}", targetUrl);
+        log.info("Redirecting to OAuth callback");
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
