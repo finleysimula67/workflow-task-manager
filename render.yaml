@@ -1,40 +1,84 @@
+version: "1"
+
 services:
+  # ============================================
+  # BACKEND - Spring Boot
+  # ============================================
   - type: web
     name: workflow-task-manager-backend
     runtime: docker
     plan: free
 
+    # Backend directory in this repository
     rootDir: workflow-task-manager-backend
+
+    # Dockerfile is inside the backend directory
     dockerfilePath: ./Dockerfile
     dockerContext: .
 
+    # Spring Boot Actuator health endpoint
     healthCheckPath: /actuator/health
 
     envVars:
+      # Server
       - key: PORT
         value: 8080
+
       - key: SPRING_PROFILES_ACTIVE
         value: prod
+
+      # Application configuration
       - key: CORS_ALLOW_LOCAL_ORIGINS
         value: "false"
+
       - key: UPLOAD_DIR
         value: uploads
 
+      # Database
       - key: DATABASE_URL
         sync: false
+
       - key: DATABASE_USERNAME
         sync: false
+
       - key: DATABASE_PASSWORD
         sync: false
+
+      # Security
       - key: JWT_SECRET
         sync: false
+
+      # Email
       - key: MAIL_USERNAME
         sync: false
+
       - key: MAIL_PASSWORD
         sync: false
+
+      # Google OAuth
       - key: GOOGLE_CLIENT_ID
         sync: false
+
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+
+      # Frontend
       - key: FRONTEND_URL
+        sync: false
+
+  # ============================================
+  # FRONTEND - React / Vite
+  # ============================================
+  - type: web
+    name: workflow-task-manager-frontend
+    runtime: static
+
+    # Frontend directory in this repository
+    rootDir: workflow-task-manager-frontend
+
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+
+    envVars:
+      - key: VITE_API_URL
         sync: false
