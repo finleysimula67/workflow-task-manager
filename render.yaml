@@ -9,14 +9,10 @@ services:
     runtime: docker
     plan: free
 
-    # Backend directory in this repository
     rootDir: workflow-task-manager-backend
-
-    # Dockerfile is inside the backend directory
     dockerfilePath: ./Dockerfile
     dockerContext: .
 
-    # Spring Boot Actuator health endpoint
     healthCheckPath: /actuator/health
 
     envVars:
@@ -27,7 +23,7 @@ services:
       - key: SPRING_PROFILES_ACTIVE
         value: prod
 
-      # Application configuration
+      # Application
       - key: CORS_ALLOW_LOCAL_ORIGINS
         value: "false"
 
@@ -64,21 +60,4 @@ services:
 
       # Frontend
       - key: FRONTEND_URL
-        sync: false
-
-  # ============================================
-  # FRONTEND - React / Vite
-  # ============================================
-  - type: web
-    name: workflow-task-manager-frontend
-    runtime: static
-
-    # Frontend directory in this repository
-    rootDir: workflow-task-manager-frontend
-
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-
-    envVars:
-      - key: VITE_API_URL
         sync: false
