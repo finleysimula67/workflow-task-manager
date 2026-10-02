@@ -1,15 +1,15 @@
-version: "1"
 services:
-  # 1. The Backend (Spring Boot)
   - type: web
     name: workflow-task-manager-backend
     runtime: docker
-    repo: https://github.com/finleysimula67/workflow
     plan: free
-    rootDir: backend
+
+    rootDir: workflow-task-manager-backend
+    dockerfilePath: ./Dockerfile
     dockerContext: .
-    dockerfilePath: ./Dockerfile  # Fixed path relative to 'backend' folder
+
     healthCheckPath: /actuator/health
+
     envVars:
       - key: PORT
         value: 8080
@@ -19,6 +19,7 @@ services:
         value: "false"
       - key: UPLOAD_DIR
         value: uploads
+
       - key: DATABASE_URL
         sync: false
       - key: DATABASE_USERNAME
@@ -36,16 +37,4 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         sync: false
       - key: FRONTEND_URL
-        sync: false
-
-  # 2. The Frontend (TypeScript)
-  - type: web
-    name: workflow-task-manager-frontend
-    runtime: static
-    repo: https://github.com/finleysimula67/workflow
-    rootDir: frontend
-    buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    envVars:
-      - key: VITE_API_URL
         sync: false
