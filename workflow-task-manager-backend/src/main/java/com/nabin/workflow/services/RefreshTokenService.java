@@ -25,7 +25,7 @@ public class RefreshTokenService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final UserRepository userRepository;
 
-    @Value("${jwt.refresh-expiration}")
+    @Value("${jwt.refresh-expiration:604800000}")
     private Long refreshTokenExpirationMs;
 
     /**
@@ -40,9 +40,14 @@ public class RefreshTokenService {
      * Create a new refresh token for user with custom expiration
      */
     @Transactional
-    public RefreshToken createRefreshToken(Long userId, HttpServletRequest request, long expirationMs) {
+    public RefreshToken createRefreshToken(
+            Long userId,
+            HttpServletRequest request,
+            long expirationMs) {
+
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", "id", userId));
 
         // Generate unique token
         String token = UUID.randomUUID().toString();
@@ -66,7 +71,12 @@ public class RefreshTokenService {
 
         RefreshToken savedToken = refreshTokenRepository.save(refreshToken);
 
-        log.info("Refresh token created for user: {} (expires: {}, duration: {} ms)", userId, expiryDate, expirationMs);
+        log.info(
+                "Refresh token created for user: {} (expires: {}, duration: {} ms)",
+                userId,
+                expiryDate,
+                expirationMs
+        );
 
         return savedToken;
     }
@@ -77,7 +87,8 @@ public class RefreshTokenService {
     @Transactional(readOnly = true)
     public RefreshToken verifyRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new UnauthorizedException("Invalid refresh token"));
+                .orElseThrow(() ->
+                        new UnauthorizedException("Invalid refresh token"));
 
         // Check if revoked
         if (refreshToken.isRevoked()) {
@@ -89,7 +100,9 @@ public class RefreshTokenService {
         if (refreshToken.isExpired()) {
             log.warn("Attempted to use expired refresh token");
             refreshTokenRepository.delete(refreshToken);
-            throw new UnauthorizedException("Refresh token has expired. Please login again.");
+            throw new UnauthorizedException(
+                    "Refresh token has expired. Please login again."
+            );
         }
 
         return refreshToken;
@@ -100,15 +113,24 @@ public class RefreshTokenService {
      * This is called when refreshing access token
      */
     @Transactional
-    public RefreshToken rotateRefreshToken(RefreshToken oldToken, HttpServletRequest request) {
-        log.info("Rotating refresh token for user: {}", oldToken.getUser().getId());
+    public RefreshToken rotateRefreshToken(
+            RefreshToken oldToken,
+            HttpServletRequest request) {
+
+        log.info(
+                "Rotating refresh token for user: {}",
+                oldToken.getUser().getId()
+        );
 
         // Revoke old token
         oldToken.setRevoked(true);
         refreshTokenRepository.save(oldToken);
 
         // Create new token
-        return createRefreshToken(oldToken.getUser().getId(), request);
+        return createRefreshToken(
+                oldToken.getUser().getId(),
+                request
+        );
     }
 
     /**
@@ -117,12 +139,16 @@ public class RefreshTokenService {
     @Transactional
     public void revokeRefreshToken(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new ResourceNotFoundException("Refresh token not found"));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Refresh token not found"));
 
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        log.info("Refresh token revoked for user: {}", refreshToken.getUser().getId());
+        log.info(
+                "Refresh token revoked for user: {}",
+                refreshToken.getUser().getId()
+        );
     }
 
     /**
@@ -131,11 +157,15 @@ public class RefreshTokenService {
     @Transactional
     public void revokeAllUserTokens(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", "id", userId));
 
         refreshTokenRepository.revokeAllUserTokens(user);
 
-        log.info("All refresh tokens revoked for user: {}", userId);
+        log.info(
+                "All refresh tokens revoked for user: {}",
+                userId
+        );
     }
 
     /**
@@ -145,7 +175,11 @@ public class RefreshTokenService {
     @Transactional
     public void deleteExpiredTokens() {
         log.info("Cleaning up expired refresh tokens...");
-        refreshTokenRepository.deleteExpiredTokens(LocalDateTime.now());
+
+        refreshTokenRepository.deleteExpiredTokens(
+                LocalDateTime.now()
+        );
+
         log.info("Expired refresh tokens cleaned up");
     }
 
@@ -169,7 +203,11 @@ public class RefreshTokenService {
 
         for (String header : headers) {
             String ip = request.getHeader(header);
-            if (ip != null && !ip.isEmpty() && !"unknown".equalsIgnoreCase(ip)) {
+
+            if (ip != null
+                    && !ip.isEmpty()
+                    && !"unknown".equalsIgnoreCase(ip)) {
+
                 return ip.split(",")[0].trim();
             }
         }
