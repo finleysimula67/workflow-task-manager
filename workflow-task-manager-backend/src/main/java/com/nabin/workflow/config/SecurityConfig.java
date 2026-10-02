@@ -1,11 +1,5 @@
 package com.nabin.workflow.config;
 
-import com.nabin.workflow.security.jwt.JwtAuthenticationFilter;
-import com.nabin.workflow.security.oauth2.OAuth2AuthenticationFailureHandler;
-import com.nabin.workflow.security.oauth2.OAuth2AuthenticationSuccessHandler;
-import com.nabin.workflow.security.oauth2.OAuth2UserService;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -21,6 +15,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
+
+import com.nabin.workflow.security.jwt.JwtAuthenticationFilter;
+import com.nabin.workflow.security.oauth2.OAuth2AuthenticationFailureHandler;
+import com.nabin.workflow.security.oauth2.OAuth2AuthenticationSuccessHandler;
+import com.nabin.workflow.security.oauth2.OAuth2UserService;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -54,7 +56,7 @@ public class SecurityConfig {
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());      // How to check passwords
+        authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
 
@@ -90,7 +92,8 @@ public class SecurityConfig {
                                 "/api/test/**",
                                 "/login/oauth2/**",
                                 "/oauth2/**",
-                                "/actuator/health"
+                                "/actuator/health",
+                                "/api/users/profile-image/**"
                         ).permitAll()
 
                         // Admin endpoints (protected by @PreAuthorize)
