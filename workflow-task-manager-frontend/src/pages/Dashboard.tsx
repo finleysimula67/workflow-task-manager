@@ -1,61 +1,87 @@
-import { useState, useEffect } from "react"
-import { useNavigate } from "react-router-dom"
-import { taskApi } from "../api/taskApi"
-import { authApi } from "../api/authApi"
-import StatCard from "../components/StatCard"
-import RecentTaskItem from "../components/RecentTaskItem"
-import RecentActivity from "../components/RecentActivity"
-import EmailVerificationBanner from "../components/EmailVerificationBanner"
-import type { TaskStats, Task } from "../types"
-import { CheckSquare, Clock, CheckCircle2, AlertTriangle, ArrowRight, Plus, TrendingUp, Calendar, Flag, Flame, ListTodo } from "lucide-react"
-import { motion } from "framer-motion"
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { taskApi } from "../api/taskApi";
+import { authApi } from "../api/authApi";
+import StatCard from "../components/StatCard";
+import RecentTaskItem from "../components/RecentTaskItem";
+import RecentActivity from "../components/RecentActivity";
+import EmailVerificationBanner from "../components/EmailVerificationBanner";
+import type { TaskStats, Task } from "../types";
+import {
+  CheckSquare,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  ArrowRight,
+  Plus,
+  TrendingUp,
+  Calendar,
+  Flag,
+  Flame,
+  ListTodo,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 function Dashboard() {
-  const navigate = useNavigate()
-  const [stats, setStats] = useState<TaskStats | null>(null)
-  const [recentTasks, setRecentTasks] = useState<Task[]>([])
-  const [productivity, setProductivity] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const user = authApi.getCurrentUser()
-
+  const navigate = useNavigate();
+  const [stats, setStats] = useState<TaskStats | null>(null);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [productivity, setProductivity] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const user = authApi.getCurrentUser();
   const loadDashboard = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const statsRes = await taskApi.getTaskStats()
-      if (statsRes.success) setStats(statsRes.data)
-      const tasksRes = await taskApi.getAllTasks()
-      if (tasksRes.success && tasksRes.data) {
-        const tasks = Array.isArray(tasksRes.data) ? tasksRes.data : []
-        setRecentTasks(tasks.slice(0, 5))
-      }
-      const prodRes = await taskApi.getProductivity()
-      if (prodRes.success) setProductivity(prodRes.data)
-    } catch (err: any) {
-      setError(err.message || "Failed to load dashboard")
-    } finally { setLoading(false) }
-  }
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => { loadDashboard() }, [])
+    try {
+      const [statsRes, tasksRes, prodRes] = await Promise.all([
+        taskApi.getTaskStats(),
+        taskApi.getAllTasks(),
+        taskApi.getProductivity(),
+      ]);
+
+      if (statsRes.success) setStats(statsRes.data);
+
+      if (tasksRes.success && tasksRes.data) {
+        const tasks = Array.isArray(tasksRes.data) ? tasksRes.data : [];
+        setRecentTasks(tasks.slice(0, 5));
+      }
+
+      if (prodRes.success) setProductivity(prodRes.data);
+    } catch (err: any) {
+      setError(err.message || "Failed to load dashboard");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
 
   const getGreeting = () => {
-    const h = new Date().getHours()
-    if (h < 12) return "Good Morning"
-    if (h < 18) return "Good Afternoon"
-    return "Good Evening"
-  }
+    const h = new Date().getHours();
+    if (h < 12) return "Good Morning";
+    if (h < 18) return "Good Afternoon";
+    return "Good Evening";
+  };
 
-  const completionRate = stats?.totalTasks ? Math.round(((stats.completedTasks || 0) / stats.totalTasks) * 100) : 0
+  const completionRate = stats?.totalTasks
+    ? Math.round(((stats.completedTasks || 0) / stats.totalTasks) * 100)
+    : 0;
 
-  if (loading) return (
-    <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-10 h-10 border-2 border-white/10 border-t-primary-400 rounded-full animate-spin mx-auto" />
-        <p className="mt-4 text-sm text-slate-500 animate-pulse">Loading dashboard...</p>
+  if (loading)
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-10 h-10 border-2 border-white/10 border-t-primary-400 rounded-full animate-spin mx-auto" />
+          <p className="mt-4 text-sm text-slate-500 animate-pulse">
+            Loading dashboard...
+          </p>
+        </div>
       </div>
-    </div>
-  )
+    );
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -65,10 +91,13 @@ function Dashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-white">
-            {getGreeting()}{user?.username ? `, ${user.username.split(" ")[0]}` : ""}
+            {getGreeting()}
+            {user?.username ? `, ${user.username.split(" ")[0]}` : ""}
             <span className="text-slate-500">.</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Here's what's happening with your tasks today</p>
+          <p className="text-sm text-slate-500 mt-1">
+            Here's what's happening with your tasks today
+          </p>
         </div>
         <button
           onClick={() => navigate("/tasks")}
@@ -96,10 +125,30 @@ function Dashboard() {
         transition={{ delay: 0.05 }}
         className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4"
       >
-        <StatCard title="Total Tasks" value={stats?.totalTasks ?? 0} icon={<CheckSquare size={20} />} accent="primary" />
-        <StatCard title="In Progress" value={stats?.inProgressTasks ?? 0} icon={<Clock size={20} />} accent="amber" />
-        <StatCard title="Completed" value={stats?.completedTasks ?? 0} icon={<CheckCircle2 size={20} />} accent="emerald" />
-        <StatCard title="Overdue" value={stats?.overdueTasks ?? 0} icon={<AlertTriangle size={20} />} accent="red" />
+        <StatCard
+          title="Total Tasks"
+          value={stats?.totalTasks ?? 0}
+          icon={<CheckSquare size={20} />}
+          accent="primary"
+        />
+        <StatCard
+          title="In Progress"
+          value={stats?.inProgressTasks ?? 0}
+          icon={<Clock size={20} />}
+          accent="amber"
+        />
+        <StatCard
+          title="Completed"
+          value={stats?.completedTasks ?? 0}
+          icon={<CheckCircle2 size={20} />}
+          accent="emerald"
+        />
+        <StatCard
+          title="Overdue"
+          value={stats?.overdueTasks ?? 0}
+          icon={<AlertTriangle size={20} />}
+          accent="red"
+        />
       </motion.div>
 
       {/* Main Content Grid */}
@@ -123,7 +172,9 @@ function Dashboard() {
               className="h-full rounded-full bg-gradient-to-r from-primary-500 to-primary-400"
             />
           </div>
-          <p className="text-sm text-slate-500 mt-3">{completionRate}% complete</p>
+          <p className="text-sm text-slate-500 mt-3">
+            {completionRate}% complete
+          </p>
         </motion.div>
 
         {/* Due This Week */}
@@ -140,7 +191,9 @@ function Dashboard() {
           <p className="text-3xl font-bold text-white">
             {stats?.dueSoonTasks ?? stats?.dueSoon ?? 0}
           </p>
-          <p className="text-sm text-slate-500 mt-1">tasks due in the next 7 days</p>
+          <p className="text-sm text-slate-500 mt-1">
+            tasks due in the next 7 days
+          </p>
         </motion.div>
 
         {/* Streak */}
@@ -155,7 +208,9 @@ function Dashboard() {
             <h3 className="font-semibold text-white">Current Streak</h3>
           </div>
           <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-white">{productivity?.currentStreak || 0}</span>
+            <span className="text-3xl font-bold text-white">
+              {productivity?.currentStreak || 0}
+            </span>
             <span className="text-sm text-slate-500">days</span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
@@ -212,7 +267,7 @@ function Dashboard() {
         </motion.div>
       </div>
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
