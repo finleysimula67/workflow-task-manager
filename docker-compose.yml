@@ -1,6 +1,5 @@
-version: '3.8'
-
 services:
+
   # ============================================
   # POSTGRESQL DATABASE
   # ============================================
@@ -8,86 +7,132 @@ services:
     image: postgres:16-alpine
     container_name: workflow-db
     restart: unless-stopped
+
     environment:
       POSTGRES_DB: workflow_db
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
     ports:
       - "5432:5432"
+
     networks:
       - workflow-network
+
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d workflow_db"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME} -d workflow_db"
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
 
   # ============================================
   # SPRING BOOT BACKEND
   # ============================================
   backend:
     build:
-      context: ./backend
+      context: ./workflow-task-manager-backend
       dockerfile: Dockerfile
+
     container_name: workflow-backend
     restart: unless-stopped
+
     environment:
       SPRING_PROFILES_ACTIVE: prod
+
       DATABASE_URL: jdbc:postgresql://postgres:5432/workflow_db
       DATABASE_USERNAME: ${DB_USERNAME}
       DATABASE_PASSWORD: ${DB_PASSWORD}
+
       JWT_SECRET: ${JWT_SECRET}
+
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
+
       FRONTEND_URL: ${FRONTEND_URL}
+
       UPLOAD_DIR: /app/uploads
+
     volumes:
       - uploads:/app/uploads
       - backend_logs:/app/logs
+
     depends_on:
       postgres:
         condition: service_healthy
+
     networks:
       - workflow-network
+
     ports:
       - "8080:8080"
+
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/actuator/health"
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+
 
   # ============================================
   # REACT FRONTEND
   # ============================================
   frontend:
     build:
-      context: ./frontend
+      context: ./workflow-task-manager-frontend
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
+
     container_name: workflow-frontend
     restart: unless-stopped
+
     ports:
       - "80:80"
       - "443:443"
+
     networks:
       - workflow-network
+
     depends_on:
       backend:
         condition: service_healthy
+
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:80/"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:80/"
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 10s
+
 
 # ============================================
 # VOLUMES
@@ -95,13 +140,16 @@ services:
 volumes:
   postgres_data:
     driver: local
+
   uploads:
     driver: local
+
   backend_logs:
     driver: local
 
+
 # ============================================
-# NETWORKS
+# NETWORK
 # ============================================
 networks:
   workflow-network:
