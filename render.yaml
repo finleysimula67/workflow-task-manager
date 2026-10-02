@@ -2,9 +2,9 @@ version: "1"
 services:
   # 1. The Backend (Spring Boot)
   - type: web
-    name: workflow-backend
+    name: workflow-task-manager-backend
     runtime: docker
-    repo: https://github.com/nabinoli99/workflow
+    repo: https://github.com/finleysimula67/workflow
     plan: free
     rootDir: backend
     dockerContext: .
@@ -40,9 +40,9 @@ services:
 
   # 2. The Frontend (TypeScript)
   - type: web
-    name: workflow-frontend
+    name: workflow-task-manager-frontend
     runtime: static
-    repo: https://github.com/nabinoli99/workflow
+    repo: https://github.com/finleysimula67/workflow
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: ./dist
