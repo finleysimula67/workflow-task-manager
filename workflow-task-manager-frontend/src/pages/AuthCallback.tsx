@@ -46,9 +46,8 @@ function AuthCallback() {
         window.location.replace('/dashboard');
 
       } catch (error) {
-        // OAuth error shown via toast
+        console.error('OAuth callback error:', error);
         toast.error('Authentication failed. Please try again.');
-        navigate('/login', { replace: true });
       }
     };
 
