@@ -36,10 +36,10 @@ public class AuthenticationService {
     private final RefreshTokenService refreshTokenService;
     private final ActivityLogService activityLogService;
 
-    @Value("${jwt.refresh-expiration}")
+    @Value("${jwt.refresh-expiration:604800000}")
     private Long refreshTokenExpirationMs;
 
-    @Value("${jwt.remember-me-expiration}")
+    @Value("${jwt.remember-me-expiration:2592000000}")
     private Long rememberMeExpirationMs;
 
     @Transactional
