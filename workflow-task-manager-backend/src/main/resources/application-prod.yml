@@ -132,3 +132,11 @@ logging:
     name: logs/workflow.log
     max-size: 10MB
     max-history: 30
+
+# Disable SMTP health checks because Render cannot reach
+# Gmail SMTP on port 587 during the health check.
+# This does NOT disable email sending.
+management:
+  health:
+    mail:
+      enabled: false
