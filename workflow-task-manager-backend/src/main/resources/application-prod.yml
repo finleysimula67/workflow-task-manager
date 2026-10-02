@@ -1,98 +1,134 @@
-name: CI/CD Pipeline
+# ============================================
+# PRODUCTION SETTINGS - Render Deployment
+# ============================================
 
-on:
-  push:
-    branches: [main, master]
-  pull_request:
-    branches: [main, master]
+spring:
+  application:
+    name: WorkFlow
 
-jobs:
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      idle-timeout: 300000
+      max-lifetime: 600000
 
-  # ==========================================
-  # 1. BACKEND CI (Spring Boot)
-  # ==========================================
-  backend-ci:
-    name: Backend - Build & Test
-    runs-on: ubuntu-latest
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false
+        use_sql_comments: false
+    open-in-view: false
 
-    defaults:
-      run:
-        working-directory: ./workflow-task-manager-backend
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+      file-size-threshold: 2KB
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            client-name: Google
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://openidconnect.googleapis.com/v1/userinfo
+            user-name-attribute: sub
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: 'temurin'
-          cache: maven
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        transport:
+          protocol: smtp
+    default-encoding: UTF-8
 
-      - name: Build Backend (Skip DB Tests)
-        run: mvn clean package -DskipTests
+server:
+  port: ${PORT:8080}
 
+  tomcat:
+    max-http-form-post-size: 52428800
+    max-swallow-size: 52428800
 
-  # ==========================================
-  # 2. FRONTEND CI (React/Node.js)
-  # ==========================================
-  frontend-ci:
-    name: Frontend - Build & Test
-    runs-on: ubuntu-latest
+  servlet:
+    context-path: /
 
-    defaults:
-      run:
-        working-directory: ./workflow-task-manager-frontend
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+app:
+  oauth2:
+    redirect-uri: ${FRONTEND_URL}/auth/callback
 
-      - name: Set up Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-          cache-dependency-path: './workflow-task-manager-frontend/package-lock.json'
+  email:
+    from: ${MAIL_USERNAME}
+    from-name: WorkFlow Team
 
-      - name: Install Dependencies & Build Frontend
-        run: |
-          npm ci --legacy-peer-deps
-          npm run build --if-present
+  frontend:
+    url: ${FRONTEND_URL}
 
+  verification:
+    token-expiration: 86400000
 
-  # ==========================================
-  # 3. DEPLOY BACKEND TO RENDER
-  # ==========================================
-  deploy-backend:
-    name: Deploy Backend to Render
+  password-reset:
+    token-expiration: 3600000
 
-    needs:
-      - backend-ci
-      - frontend-ci
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 900000
+  refresh-expiration: 604800000
+  remember-me-expiration: 2592000000
+  issuer: WorkFlow
 
-    if: >
-      github.event_name == 'push' &&
-      (github.ref == 'refs/heads/main' ||
-       github.ref == 'refs/heads/master')
+cors:
+  allow-local-origins: ${CORS_ALLOW_LOCAL_ORIGINS:false}
+  allowed:
+    origins: ${FRONTEND_URL}
 
-    runs-on: ubuntu-latest
+file:
+  upload-dir: ${UPLOAD_DIR:uploads}
 
-    steps:
+logging:
+  level:
+    root: INFO
+    com.nabin.workflow: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
 
-      # ----------------------------------------
-      # Backend → Render
-      # ----------------------------------------
-      - name: Trigger Backend Deploy
-        env:
-          RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
-        run: |
-          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
-            echo "ERROR: RENDER_BACKEND_DEPLOY_HOOK is not configured."
-            exit 1
-          fi
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-          curl --fail --silent --show-error \
-            -X POST \
-            "$RENDER_BACKEND_DEPLOY_HOOK"
+  file:
+    name: logs/workflow.log
+    max-size: 10MB
+    max-history: 30
